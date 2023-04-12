@@ -3,7 +3,7 @@
 % close all
 
 %%
-simdata_or_realdata = 'real'; % 'sim' to simulate data, 'real' to load real data
+simdata_or_realdata = 'sim'; % 'sim' to simulate data, 'real' to load real data
 
 if strcmp(simdata_or_realdata,'sim') % simuldated data
     
@@ -46,7 +46,7 @@ if strcmp(simdata_or_realdata,'sim') % simuldated data
 %         'stimulusRemapping',[cart(:,1);cart(:,2)]' - [stimCols(1,:),stimCols(2,:)]);
     
     % attractorPoints =  [37,-37,0,0];
-    % attractorWeights = [0.5,0.6];
+    % attractorWeights = [10,20];
     %
     % [nll, data] = generateSimulatedData_TCC_parameterized([],...
     %     'nTrials',nTrials,...
@@ -158,7 +158,8 @@ x0 = lb + (ub-lb).*rand(1,numel(lb)); % random points between lb and ub
 optimisationMeta = [...     % what do the x values represent in the fitting? (1st column - is it passed, 2nd column - how many values would it be if it were)
     true,   nBig*nBig;...   % free similarityMatrix
     false,   1;...           % dprime
-    false,   nBig*2;...      % stimulus remapping
+    false,   nBig*2;...      % stimulus remapping (cartesian)
+    false,   nBig;...        % stimulus remapping (polar, angle in degrees)
     false,   4;...           % attractor points
     false,   2;...           % attractor weights
     false,   1;...           % lambda
@@ -209,6 +210,9 @@ toc
 [x,Resnorm,FVAL,EXITFLAG,OUTPUT,LAMBDA,JACOB] = lsqnonlin(f,x0,lb,ub,options);
 
 %x = bads(f,x0,lb,ub,[],PUB);
+
+CI = nlparci(x,FVAL,'jacobian',JACOB);
+
 
 
 %%

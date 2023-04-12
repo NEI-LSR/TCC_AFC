@@ -1,4 +1,4 @@
-function [nll, cleandata] = generateSimulatedData_TCC(optimisationParams,varargin)
+function [nll, cleandata] = GenerativeModel(optimisationParams,varargin)
 
 % Generates simulated data based on passed parameters
 % ... using the TCC model [ref 1]
@@ -15,23 +15,24 @@ function [nll, cleandata] = generateSimulatedData_TCC(optimisationParams,varargi
 
 %rng(42); % fixes random number generator for reproducibility
 
-default_similarityMatrix    = NaN;  % generate below if not passed
-default_dprime              = 1;    % Eyeballed from [ref 1], fig 3
-default_stimulusRemapping   = NaN;
-default_nBig                = 64;   % the large n-AFC that we are trying to emulate
-default_nSmall              = 4;    % the actual n we are using
-default_nTrials             = 10000;% number of trials
-default_CorrectOpt          = 1;    % always having a correct option presented as a response option
-default_stimCols            = NaN;  % Specify stimulus. Default is set to NaN (Not a Number) so that it calls an additional function to generate stimuli.
-default_choiceInds          = NaN;  % Specify response option indices. Default is set to NaN (Not a Number) so that it calls an additional function to generate stimuli.
-default_cueInd              = NaN;  % Hard-coded stimulus. Default is set to NaN (Not a Number) so that it will normally generate stimuli options internally.
-default_response            = NaN;  % If you're generating data, this function will generate chosen values, if you're not, it will return probabilities instead
-default_attractorPoints     = NaN;  % NaN = no attractor points
-default_attractorWeights    = NaN;  % NaN = no attractor weights
-default_optimisationMeta    = NaN;  % optimisation metadata (What is contained in `optimisationParams`?)
-default_forceNumerical      = false;
-default_lambda              = -0.1; % similarity function
-default_sigma               = 7;    % perceptual function
+default_similarityMatrix      = NaN;  % generate below if not passed
+default_dprime                = 1;    % Eyeballed from [ref 1], fig 3
+default_stimulusRemappingCart = NaN;
+default_stimulusRemappingPol  = NaN;
+default_nBig                  = 64;   % the large n-AFC that we are trying to emulate
+default_nSmall                = 4;    % the actual n we are using
+default_nTrials               = 10000;% number of trials
+default_CorrectOpt            = 1;    % always having a correct option presented as a response option
+default_stimCols              = NaN;  % Specify stimulus. Default is set to NaN (Not a Number) so that it calls an additional function to generate stimuli.
+default_choiceInds            = NaN;  % Specify response option indices. Default is set to NaN (Not a Number) so that it calls an additional function to generate stimuli.
+default_cueInd                = NaN;  % Hard-coded stimulus. Default is set to NaN (Not a Number) so that it will normally generate stimuli options internally.
+default_response              = NaN;  % If you're generating data, this function will generate chosen values, if you're not, it will return probabilities instead
+default_attractorPoints       = NaN;  % NaN = no attractor points
+default_attractorWeights      = NaN;  % NaN = no attractor weights
+default_optimisationMeta      = NaN;  % optimisation metadata (What is contained in `optimisationParams`?)
+default_forceNumerical        = false;
+default_lambda                = -0.1; % similarity function
+default_sigma                 = 7;    % perceptual function
 
 errorMsg = 'Value must be positive, scalar, and numeric.';
 validationFcn = @(x) assert(isnumeric(x) && isscalar(x) && (x > 0),errorMsg);
@@ -39,7 +40,8 @@ validationFcn = @(x) assert(isnumeric(x) && isscalar(x) && (x > 0),errorMsg);
 ip = inputParser;
 addParameter(ip,'similarityMatrix',default_similarityMatrix);
 addParameter(ip,'dprime',default_dprime);
-addParameter(ip,'stimulusRemapping',default_stimulusRemapping);
+addParameter(ip,'stimulusRemappingCart',default_stimulusRemappingCart);
+addParameter(ip,'stimulusRemappingPol',default_stimulusRemappingPol);
 addParameter(ip,'nBig',default_nBig, validationFcn);
 addParameter(ip,'nSmall',default_nSmall, validationFcn);
 addParameter(ip,'nTrials',default_nTrials, validationFcn);
@@ -57,46 +59,50 @@ addParameter(ip,'sigma',default_sigma);
 
 parse(ip,varargin{:});
 
-similarityMatrix    = ip.Results.similarityMatrix;
-dprime              = ip.Results.dprime;
-stimulusRemapping   = ip.Results.stimulusRemapping;
-nBig                = ip.Results.nBig;
-nSmall              = ip.Results.nSmall;
-nTrials             = ip.Results.nTrials;
-CorrectOpt          = ip.Results.CorrectOpt;
-stimCols            = ip.Results.stimCols;
-choiceInds          = ip.Results.choiceInds;
-cueInd              = ip.Results.cueInd;
-response            = ip.Results.response;
-attractorPoints     = ip.Results.attractorPoints;
-attractorWeights    = ip.Results.attractorWeights;
-om                  = ip.Results.optimisationMeta;
-forceNumerical      = ip.Results.forceNumerical;
-lambda              = ip.Results.lambda;
-sigma               = ip.Results.sigma;
+similarityMatrix      = ip.Results.similarityMatrix;
+dprime                = ip.Results.dprime;
+stimulusRemappingCart = ip.Results.stimulusRemappingCart;
+stimulusRemappingPol  = ip.Results.stimulusRemappingPol;
+nBig                  = ip.Results.nBig;
+nSmall                = ip.Results.nSmall;
+nTrials               = ip.Results.nTrials;
+CorrectOpt            = ip.Results.CorrectOpt;
+stimCols              = ip.Results.stimCols;
+choiceInds            = ip.Results.choiceInds;
+cueInd                = ip.Results.cueInd;
+response              = ip.Results.response;
+attractorPoints       = ip.Results.attractorPoints;
+attractorWeights      = ip.Results.attractorWeights;
+om                    = ip.Results.optimisationMeta;
+forceNumerical        = ip.Results.forceNumerical;
+lambda                = ip.Results.lambda;
+sigma                 = ip.Results.sigma;
 
 if ~isnan(om)
     if om(1,1)
-        similarityVector    = optimisationParams(1 : om(1,2));
-        similarityMatrix    = reshape(similarityVector,[nBig, nBig]);
+        similarityVector       = optimisationParams(1 : om(1,2));
+        similarityMatrix       = reshape(similarityVector,[nBig, nBig]);
     end
     if om(2,1)
-        dprime              = optimisationParams(sum(prod(om(1:1,:),2)) + 1 : sum(prod(om(1:2,:),2)));
+        dprime                 = optimisationParams(sum(prod(om(1:1,:),2)) + 1 : sum(prod(om(1:2,:),2)));
     end
     if om(3,1)
-        stimulusRemapping   = optimisationParams(sum(prod(om(1:2,:),2)) + 1 : sum(prod(om(1:3,:),2)));
+        stimulusRemappingCart  = optimisationParams(sum(prod(om(1:2,:),2)) + 1 : sum(prod(om(1:3,:),2)));
     end
     if om(4,1)
-        attractorPoints     = optimisationParams(sum(prod(om(1:3,:),2)) + 1 : sum(prod(om(1:4,:),2)));
+        stimulusRemappingPol   = optimisationParams(sum(prod(om(1:3,:),2)) + 1 : sum(prod(om(1:4,:),2)));
     end
     if om(5,1)
-        attractorWeights    = optimisationParams(sum(prod(om(1:4,:),2)) + 1 : sum(prod(om(1:5,:),2)));
+        attractorPoints        = optimisationParams(sum(prod(om(1:4,:),2)) + 1 : sum(prod(om(1:5,:),2)));
     end
     if om(6,1)
-        lambda              = optimisationParams(sum(prod(om(1:5,:),2)) + 1 : sum(prod(om(1:6,:),2)));
+        attractorWeights       = optimisationParams(sum(prod(om(1:5,:),2)) + 1 : sum(prod(om(1:6,:),2)));
     end
     if om(7,1)
-        sigma               = optimisationParams(sum(prod(om(1:6,:),2)) + 1 : sum(prod(om(1:7,:),2)));
+        lambda                 = optimisationParams(sum(prod(om(1:6,:),2)) + 1 : sum(prod(om(1:7,:),2)));
+    end
+    if om(8,1)
+        sigma                  = optimisationParams(sum(prod(om(1:7,:),2)) + 1 : sum(prod(om(1:8,:),2)));
     end
 end
 
@@ -124,10 +130,21 @@ end
 
 %disp(stimulusRemapping(1:10))
 
-if ~isnan(stimulusRemapping)
-    stimulusRemapping = reshape(stimulusRemapping, [nBig,2])';
-    stimCols_pr = stimCols + stimulusRemapping; %stimcols post-remap
+if ~isnan(stimulusRemappingCart)
+    stimulusRemappingCart = reshape(stimulusRemappingCart, [nBig,2])';
+    stimCols_pr = stimCols + stimulusRemappingCart; %stimcols post-remap
     %disp(stimCols_pr(1,1:10))
+elseif ~isnan(stimulusRemappingPol)
+    % convert stimCols to polar
+    [stimCols_pol(1,:),stimCols_pol(2,:)] = cart2pol(stimCols(1,:),stimCols(2,:));
+    stimCols_pol(1,:) = rad2deg(stimCols_pol(1,:));
+    stimCols_pol(1,stimCols_pol(1,:) < 0) = stimCols_pol(1,stimCols_pol(1,:) < 0) + 360;
+    % apply stimulus remapping
+    stimCols_pol(1,:) = stimCols_pol(1,:) + stimulusRemappingPol;
+    stimCols_pol(stimCols_pol < 0)    = stimCols_pol(stimCols_pol < 0)    + 360;
+    stimCols_pol(stimCols_pol >= 360) = stimCols_pol(stimCols_pol >= 360) - 360;
+    % convert back to cartesian
+    [stimCols_pr(1,:),stimCols_pr(2,:)] = pol2cart(deg2rad(stimCols_pol(1,:)),stimCols_pol(2,:));
 else
     stimCols_pr = stimCols;
 end
@@ -243,38 +260,33 @@ if any(~isnan(attractorPoints)) && any(~isnan(attractorWeights))
 
     % Create attractor similarity matrix
 
-    sm_a = zeros(nBig,nBig,length(attractorPoints)); % similiarity matrix - attractors
+    sm_a = zeros(nBig,nBig,length(attractorPoints)/2); % similiarity matrix - attractors
     for i = 1:length(attractorPoints)/2
+
+        isWithinAttractorRadius(i,:) = (stimCols_pr(1,:)-attractorPoints_u(i)).^2 + (stimCols_pr(2,:)-attractorPoints_v(i)).^2 < attractorWeights(i)^2; % Is each stimulus within the radius of the ith attractor point
 
         D_a(i,:) = sqrt(((attractorPoints_u(i) - stimCols_pr(1,:)).^2) + ((attractorPoints_v(i) - stimCols_pr(2,:)).^2)); % distances, attractor point
         sv_a = combinedSim(round(D_a(i,:)*abs(1/(x(1)-x(2))))+1);
         sm_a(:,:,i) = repmat(sv_a,nBig,1)...
-            * attractorWeights(i);
+            .* isWithinAttractorRadius(i,:)';
 
-        %         figure,
-        %         imagesc(sm_a(:,:,i))
-        %         colorbar
-        %         axis equal tight
-        %         colormap('gray')
+%         figure,
+%         imagesc(sm_a(:,:,i))
+%         colorbar
+%         axis equal tight
+%         colormap('gray')
     end
-
-    sm_a = sum(sm_a,3);
-
-    %     figure,
-    %     imagesc(sm_a)
-    %     colorbar
-    %     axis equal tight
-    %     colormap('gray')
 
     % Combine with standard similarity matrix
 
-    similarityMatrix = similarityMatrix + sm_a;
+    similarityMatrix = sum(cat(3,similarityMatrix,sm_a),3);
+    similarityMatrix(similarityMatrix >= 1) = 1;
 
-    %     figure,
-    %     imagesc(similarityMatrix)
-    %     colorbar
-    %     axis equal tight
-    %     colormap('gray')
+        figure,
+        imagesc(similarityMatrix)
+        colorbar
+        axis equal tight
+        colormap('gray')
 
 end
 
