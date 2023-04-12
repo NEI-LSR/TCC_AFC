@@ -16,11 +16,17 @@ nBig = 64;
 
 sm = reshape(x, [64,64]);
 
+% sm = zeros(nBig); % simple simulated cognitive bias
+% sm(logical(eye(nBig))) = 1;
+% sm(28:32,28:32) = triu(ones(5));
+% sm(33:37,33:37) = tril(ones(5));
+
 figure,
 imagesc(sm)
 axis square
 colormap('gray')
 colorbar
+set(gca,'YDir','normal')
 
 %%
 
@@ -29,6 +35,8 @@ colorbar
 %categoryCenters = [4,18,37,50]; %Castor
 categoryCenters = [1,43]; %Buster
 %categoryCenters = [37,63]; %Morty
+
+% categoryCenters = [32]; %simple simulated cognitive bias
 
 
 for categoryCenter = categoryCenters(1)
@@ -71,12 +79,19 @@ for n = 1:length(range)
     end
     halfLength = floor(sum(t(:))/2);
     sm_t = sm_cs(t); % switch out for desired sm (centred on category)
-    sym(n) = mean(sm_t(1:halfLength)) - mean(sm_t(halfLength+1:end));
+    sym(n) = mean(sm_t(1:halfLength)) - mean(sm_t(end:-1:end-halfLength+1));
 
     % bootstrap
     for boot = 1:1000
-        sm_t_bs = sm_t(randperm(length(sm_t))); % similarity matrix, temporary, bootstrap
-        sym_bs(boot) = mean(sm_t_bs(1:halfLength)) - mean(sm_t_bs(halfLength+1:end)); %symmetry, bootstrap
+        switch_ = logical(randi([0, 1], [1, halfLength]));
+        if mod(sum(t(:)),2)
+            switch_ = [switch_,false,flip(switch_)];
+        else
+            switch_ = [switch_,flip(switch_)];
+        end
+        sm_t_bs(switch_) = flip(sm_t(switch_)); % similarity matrix, temporary, bootstrap
+        sm_t_bs(~switch_) = sm_t(~switch_);
+        sym_bs(boot) = mean(sm_t_bs(1:halfLength)) - mean(sm_t(end:-1:end-halfLength+1)); %symmetry, bootstrap
     end
     lowerCI(n) = prctile(sym_bs,2.5);
     upperCI(n) = prctile(sym_bs,97.5);
@@ -92,10 +107,12 @@ colormap('gray')
 colorbar
 
 figure, hold on
-plot(sym,'k')
-yline(0)
+plot(sym,'k','DisplayName','Symmetry')
+%yline(0,'HandleVisibility','off')
 axis tight
 ylabel('Symmetry (one side - other side)')
 
-plot(lowerCI,)
+plot(lowerCI,'DisplayName','lowerCI')
+plot(upperCI,'DisplayName','upperCI')
 
+legend
