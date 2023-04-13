@@ -274,7 +274,7 @@ if any(~isnan(attractorPoints)) && any(~isnan(attractorWeights))
 
         for stim = 1:nBig
             if isWithinAttractorRadius(i,stim)
-                isOtherStimBetweenStimAndAttractor(i,stim,:) = (stimCols_pr(1,:)-attractorPoints_u(i)).^2 + (stimCols_pr(2,:)-attractorPoints_v(i)).^2 < (stimCols_pr(1,stim)-attractorPoints_u(i)).^2 + (stimCols_pr(2,stim)-attractorPoints_v(i)).^2; % Is each stimulus within the radius of the ith attractor point
+                isOtherStimBetweenStimAndAttractor(i,stim,:) = (stimCols_pr(1,:)-attractorPoints_u(i)).^2 + (stimCols_pr(2,:)-attractorPoints_v(i)).^2 < (stimCols_pr(1,stim)-attractorPoints_u(i)).^2 + (stimCols_pr(2,stim)-attractorPoints_v(i)).^2;
                 for otherStim = 1:nBig
                     if isOtherStimBetweenStimAndAttractor(i,stim,otherStim)
                         distanceBetweenStimAndOtherStim = D(stim,otherStim);
