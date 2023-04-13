@@ -258,46 +258,51 @@ if any(~isnan(attractorPoints)) && any(~isnan(attractorWeights))
     attractorPoints_u = attractorPoints(1:length(attractorPoints)/2);
     attractorPoints_v = attractorPoints(length(attractorPoints)/2+1:end);
 
-    % Create attractor similarity matrix
+       % Create attractor similarity matrix
 
     sm_a = zeros(nBig,nBig,length(attractorPoints)/2); % similiarity matrix - attractors
     for i = 1:length(attractorPoints)/2
-        for k = 1:10
 
-            ap_t = stimCols_pr + (k/10) * [attractorPoints_u(i) - stimCols_pr(1,:); attractorPoints_v(i) - stimCols_pr(2,:)]; % attractor point temp
-            attractorWeightsVec = linspace(0,attractorWeights(i),11);
-            attractorWeightsVec = attractorWeightsVec(2:end);
-            aw_t = attractorWeightsVec(k); % attractor weight temp
-            
-            figure, hold on, axis('equal'), legend
-            scatter(stimCols_pr(1,:),stimCols(2,:),'DisplayName','stimCols\_pr')
-            scatter(ap_t(1,:),ap_t(2,:),'DisplayName','Temp Attractor Point')
+        % if stim A is within attractor, 
+        % stim A's similarity to *all the other stimuli* 
+        % that are also within radius i, 
+        % and that are closer to the stim A than the attractor point is
+        % get max value (1)
 
-            D_a = sqrt(((ap_t(1,:) - stimCols_pr(1,:)).^2) + ((ap_t(2,:) - stimCols_pr(2,:)).^2)); % distances, attractor point
-            D_a_scaled = D_a*(1/aw_t);
-            sv_a        = combinedSim(round(D_a       *abs(1/(x(1)-x(2))))+1); % similarity vector, attractor
-            sv_a_scaled = combinedSim(round(D_a_scaled*abs(1/(x(1)-x(2))))+1); % similarity vector, attractor
-            sm_a_t(:,:,i,k) = sv_a.*sv_a_scaled'; % compute the amount of each sv_a inhereted, based on the distance *to* the attractor point
+        D_a(i,:) = sqrt(((attractorPoints_u(i) - stimCols_pr(1,:)).^2) + ((attractorPoints_v(i) - stimCols_pr(2,:)).^2)); % distances, attractor point
+        isWithinAttractorRadius(i,:) = (stimCols_pr(1,:)-attractorPoints_u(i)).^2 + (stimCols_pr(2,:)-attractorPoints_v(i)).^2 < attractorWeights(i)^2; % Is each stimulus within the radius of the ith attractor point
+
+        for stim = 1:nBig
+            if isWithinAttractorRadius(i,stim)
+                isOtherStimBetweenStimAndAttractor(i,stim,:) = (stimCols_pr(1,:)-attractorPoints_u(i)).^2 + (stimCols_pr(2,:)-attractorPoints_v(i)).^2 < (stimCols_pr(1,stim)-attractorPoints_u(i)).^2 + (stimCols_pr(2,stim)-attractorPoints_v(i)).^2; % Is each stimulus within the radius of the ith attractor point
+                for otherStim = 1:nBig
+                    if isOtherStimBetweenStimAndAttractor(i,stim,otherStim)
+                        distanceBetweenStimAndOtherStim = D(stim,otherStim);
+                        distanceBetweenStimAndAttractorPoint = D_a(i,stim);
+                        if distanceBetweenStimAndOtherStim <= distanceBetweenStimAndAttractorPoint + 0.01 % SCARY MAGIC NUMBER BE HEREEE
+                            sm_a(stim,otherStim,i) = 1;
+                        end
+                    end
+                end
+            end
         end
 
-        sm_a(:,:,i) = max(sm_a_t(:,:,i,:),[],4);
-        
-        figure,
-        imagesc(sm_a(:,:,i))
-        colorbar
-        axis equal tight
-        colormap('gray')
+%         figure,
+%         imagesc(sm_a(:,:,i))
+%         colorbar
+%         axis equal tight
+%         colormap('gray')
     end
 
     % Combine with standard similarity matrix
 
-    similarityMatrix = max(cat(3,similarityMatrix,sm_a),[],3);
+       similarityMatrix = max(cat(3,similarityMatrix,sm_a),[],3);
 
-    figure,
-    imagesc(similarityMatrix)
-    colorbar
-    axis equal tight
-    colormap('gray')
+%         figure,
+%         imagesc(similarityMatrix)
+%         colorbar
+%         axis equal tight
+%         colormap('gray')
 
 end
 
