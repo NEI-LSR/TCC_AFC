@@ -253,15 +253,21 @@ if isnan(similarityMatrix)
 
 end
 
-if any(~isnan(attractorPoints)) && any(~isnan(attractorWeights))
+if any(~isnan(attractorPoints(:))) && any(~isnan(attractorWeights(:)))
 
-    attractorPoints_u = attractorPoints(1:length(attractorPoints)/2);
-    attractorPoints_v = attractorPoints(length(attractorPoints)/2+1:end);
+    if size(attractorPoints,1) == 2
+        attractorPoints_u = attractorPoints(1,:);
+        attractorPoints_v = attractorPoints(2,:);
+    elseif size(attractorPoints,1) == 1
+        attractorPoints_u = attractorPoints(1:length(attractorPoints)/2);
+        attractorPoints_v = attractorPoints(length(attractorPoints)/2+1:end);
+    end
+    nAttactors = length(attractorPoints_u);
 
        % Create attractor similarity matrix
 
-    sm_a = zeros(nBig,nBig,length(attractorPoints)/2); % similiarity matrix - attractors
-    for i = 1:length(attractorPoints)/2
+    sm_a = zeros(nBig,nBig,nAttactors); % similiarity matrix - attractors
+    for i = 1:nAttactors
 
         % if stim A is within attractor, 
         % stim A's similarity to *all the other stimuli* 
@@ -274,12 +280,14 @@ if any(~isnan(attractorPoints)) && any(~isnan(attractorWeights))
 
         for stim = 1:nBig
             if isWithinAttractorRadius(i,stim)
-                isOtherStimBetweenStimAndAttractor(i,stim,:) = (stimCols_pr(1,:)-attractorPoints_u(i)).^2 + (stimCols_pr(2,:)-attractorPoints_v(i)).^2 < (stimCols_pr(1,stim)-attractorPoints_u(i)).^2 + (stimCols_pr(2,stim)-attractorPoints_v(i)).^2;
+                isOtherStimBetweenStimAndAttractor(i,stim,:) = (stimCols_pr(1,:)-attractorPoints_u(i)).^2 + (stimCols_pr(2,:)-attractorPoints_v(i)).^2 ...
+                    < (stimCols_pr(1,stim)-attractorPoints_u(i)).^2 + (stimCols_pr(2,stim)-attractorPoints_v(i)).^2;
                 for otherStim = 1:nBig
                     if isOtherStimBetweenStimAndAttractor(i,stim,otherStim)
                         distanceBetweenStimAndOtherStim = D(stim,otherStim);
                         distanceBetweenStimAndAttractorPoint = D_a(i,stim);
-                        if distanceBetweenStimAndOtherStim <= distanceBetweenStimAndAttractorPoint + 0.01 % SCARY MAGIC NUMBER BE HEREEE
+                        if distanceBetweenStimAndOtherStim ...
+                                <= distanceBetweenStimAndAttractorPoint + 0.01 % SCARY MAGIC NUMBER BE HEREEE
                             sm_a(stim,otherStim,i) = 1;
                         end
                     end

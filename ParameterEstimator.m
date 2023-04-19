@@ -1,13 +1,13 @@
-% clear, 
-% clc, 
-% close all
+clear, 
+clc, 
+close all
 
 %%
 simdata_or_realdata = 'sim'; % 'sim' to simulate data, 'real' to load real data
 
 if strcmp(simdata_or_realdata,'sim') % simuldated data
     
-    nTrials = 10000;
+    nTrials = 50000;
     nBig = 64;
     nSmall = 4;
     
@@ -33,10 +33,10 @@ if strcmp(simdata_or_realdata,'sim') % simuldated data
     
     % % Generate simulated data
     
-    [nll, data] = GenerativeModel([],...
-        'nTrials',nTrials, ...
-        'nBig',nBig, ...
-        'nSmall',nSmall);
+%     [nll, data] = GenerativeModel([],...
+%         'nTrials',nTrials, ...
+%         'nBig',nBig, ...
+%         'nSmall',nSmall);
     
 %     [nll, data] = GenerativeModel([],...
 %         'nTrials',nTrials,...
@@ -45,30 +45,32 @@ if strcmp(simdata_or_realdata,'sim') % simuldated data
 %         'dprime',1,...
 %         'stimulusRemapping',[cart(:,1);cart(:,2)]' - [stimCols(1,:),stimCols(2,:)]);
     
-    % attractorPoints =  [37,-37,0,0];
-    % attractorWeights = [10,20];
-    %
-    % [nll, data] = generateSimulatedData_TCC_parameterized([],...
-    %     'nTrials',nTrials,...
-    %     'nBig',nBig, ...
-    %     'nSmall',nSmall,...
-    %     'dprime',1,...
-    %     'attractorPoints',attractorPoints,...
-    %     'attractorWeights',attractorWeights,...
-    %     'stimulusRemapping',[cart(:,1);cart(:,2)]' - [stimCols(1,:),stimCols(2,:)]);
+    stimCols = generateStimCols('nBig',nBig);
+
+    attractorPoints =  [stimCols(1,:),stimCols(2,:)]; %[0,-38,38,0];
+    attractorWeights = zeros(1,nBig);%[20,30];
+    attractorWeights(16) = 20;
+    attractorWeights(48) = 30;
+    
+    [nll, data] = GenerativeModel([],...
+        'attractorPoints',attractorPoints,...
+        'attractorWeights',attractorWeights,...
+        'nTrials',nTrials,...
+        'nBig',nBig,...
+        'nSmall',nSmall);
     
     choiceInds =    cell2mat(data.trialdata.choices)';
     cueInd =        cell2mat(data.trialdata.cues);
     response =      cell2mat(data.trialdata.chosen);
     stimCols =      data.trialdata.stimCols;
     
-%     figure,
-%     imagesc(data.trialdata.similarityMatrix)
-%     axis equal tight
-%     colormap('gray')
-%     colorbar
-%     xlabel('Choice')
-%     ylabel('Cue')
+    figure,
+    imagesc(data.trialdata.similarityMatrix)
+    axis equal tight
+    colormap('gray')
+    colorbar
+    xlabel('Choice')
+    ylabel('Cue')
 
 elseif strcmp(simdata_or_realdata,'real') % real data
 
@@ -136,16 +138,20 @@ end
 % % --- % %
 
 % % --- for free similarityMatrix --- % %
-lb = zeros(1,nBig^2); % lower bound
-ub = ones(1,nBig^2); % upper bound                      
-x0 = lb + (ub-lb).*rand(1,numel(lb)); % random points between lb and ub
+% lb = zeros(1,nBig^2); % lower bound
+% ub = ones(1,nBig^2); % upper bound                      
+% x0 = lb + (ub-lb).*rand(1,numel(lb)); % random points between lb and ub
 % % --- % %
 
 % % --- for attractor dynamics --- % %
 % nAttactors = 2;
-% lb = [0,0,0,0]; % lower bound
-% ub = [nBig,nBig,10,10]; % upper bound                      
+% lb = [-50,-50,-50,-50,0,0]; % lower bound
+% ub = [50,50,50,50,80,80]; % upper bound                      
 % x0 = lb + (ub-lb).*rand(1,numel(lb)); % random points between lb and ub
+nAttactors = nBig;
+lb = [zeros(1,nBig)]; % lower bound
+ub = [ones(1,nBig)*30]; % upper bound                      
+x0 = lb + (ub-lb).*rand(1,numel(lb))/2; % random points between lb and ub
 % % --- % %
 
 % % ----- for d prime ----- % %
@@ -155,24 +161,34 @@ x0 = lb + (ub-lb).*rand(1,numel(lb)); % random points between lb and ub
 % % --- % %
 
 
-optimisationMeta = [...     % what do the x values represent in the fitting? (1st column - is it passed, 2nd column - how many values would it be if it were)
-    true,   nBig*nBig;...   % free similarityMatrix
+optimisationMeta = [...      % what do the x values represent in the fitting? (1st column - is it passed, 2nd column - how many values would it be if it were)
+    false,   nBig*nBig;...   % free similarityMatrix
     false,   1;...           % dprime
     false,   nBig*2;...      % stimulus remapping (cartesian)
     false,   nBig;...        % stimulus remapping (polar, angle in degrees)
-    false,   4;...           % attractor points
-    false,   2;...           % attractor weights
+    false,   nAttactors*2;... % attractor points
+    true,   nAttactors;...   % attractor weights
     false,   1;...           % lambda
     false,   1;...           % sigma
     ];
 
+% options = optimoptions('lsqnonlin',...
+%     'Display','iter-detailed',...
+%      'UseParallel',true,...
+%      'FunctionTolerance', 1e-15,...
+%      'StepTolerance', 1e-15,...
+%      'DiffMinChange',1,...
+%      'PlotFcn',@optimplotx_SimilarityMatrix);
+%  %    'StepTolerance',1e-1000,...
+%  %     'FunctionTolerance', 1e-10
+%  %     ...
+
 options = optimoptions('lsqnonlin',...
     'Display','iter-detailed',...
-     'UseParallel',true,...
-     'FunctionTolerance', 1e-15,...
-     'StepTolerance', 1e-15,...
-     'DiffMinChange',1,...
-     'PlotFcn',@optimplotx);
+     'FunctionTolerance', 1e-25,...
+     'StepTolerance', 1e-25,...
+     'DiffMinChange',8,...
+     'PlotFcn',@optimplotx_SimilarityMatrix);
  %    'StepTolerance',1e-1000,...
  %     'FunctionTolerance', 1e-10
  %     ...
@@ -194,6 +210,7 @@ f = @(x)GenerativeModel(x,... % anonymous function so that we can pass additiona
     'nTrials',nTrials,...
     'nBig',nBig, ...
     'nSmall',nSmall,...
+    'attractorPoints',attractorPoints,...
     'optimisationMeta',optimisationMeta); % add stimCols to speed up slightly
 
 tic % timing test
@@ -336,3 +353,12 @@ CI = nlparci(x,FVAL,'jacobian',JACOB);
 % axis equal tight
 % colormap('gray')
 % colorbar
+
+%%
+
+figure, hold on, 
+plot(x, 'DisplayName','x')
+plot(x0, 'DisplayName','x0')
+plot(attractorWeights, 'DisplayName','attractorWeights')
+legend('Location','best')
+axis tight

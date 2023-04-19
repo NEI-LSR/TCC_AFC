@@ -21,13 +21,19 @@ stop = false;
 % 
 % dprime = x(end);
 
-nBig = sqrt(length(x));
-similarityMatrix = reshape(x,[nBig, nBig]);
+% nBig = sqrt(length(x));
+% similarityMatrix = reshape(x,[nBig, nBig]);
 
+[~, data] = GenerativeModel([],...
+    'attractorPoints',generateStimCols('nBig',64),...
+    'attractorWeights',x,...
+    'nBig',64);
 
-c = forcezerominandonemax(x);
-c(1) = c(1) + 0.0001;
-c(2) = 1-(c(2) + 0.0001);
+similarityMatrix = data.trialdata.similarityMatrix;
+
+% c = forcezerominandonemax(x);
+% c(1) = c(1) + 0.0001;
+% c(2) = 1-(c(2) + 0.0001);
 
 switch state
     case 'iter'
@@ -43,7 +49,7 @@ switch state
             caxis([0 1]) 
 
 %             title(['Current similarity matrix', newline, 'dprime:', num2str(dprime), newline, 'mean min/maxes:', num2str(c)]);
-            title(['Current similarity matrix', newline, 'mean min/maxes:', num2str(c)]);
+%             title(['Current similarity matrix', newline, 'mean min/maxes:', num2str(c)]);
             xlabel('Choice');
             ylabel('Cue');
 
@@ -53,7 +59,7 @@ switch state
             set(plotx,'Cdata',similarityMatrix);
 
 %             title(['Current similarity matrix', newline, 'dprime:', num2str(dprime), newline, 'mean min/maxes:', num2str(c)]);
-            title(['Current similarity matrix', newline, 'mean min/maxes:', num2str(c)]);
+%            title(['Current similarity matrix', newline, 'mean min/maxes:', num2str(c)]);
         end
         try
             saveas(gcf,[pwd,filesep,'plots',filesep,datestr(now,'yyyymmddTHHMMSS'), '.png'])
