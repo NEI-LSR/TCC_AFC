@@ -15,46 +15,39 @@ if strcmp(simdata_or_realdata,'sim') % simuldated data
     % % Create offsets (simulating an inhomogenous colorspace)
     % (copied from `justColSpace.m`)
     
-%     [stimCols,pol] = generateStimCols('nBig',nBig);
-%     interval = 360/nBig;
-%     magnitude = 50;
-%     offset = sin(deg2rad(0:interval:360-interval)) * magnitude;
-%     
-%     pol(1,:) = pol(1,:) + offset;
-%     [cart(:,1),cart(:,2)] = pol2cart(deg2rad(pol(1,:)),pol(2,:));
-%     
-%     figure,
-%     scatter(cart(:,1),cart(:,2))
-%     axis square
-%     
-%     figure,
-%     plot([cart(:,1);cart(:,2)]' - [stimCols(1,:),stimCols(2,:)])
+    [stimCols,pol] = generateStimCols('nBig',nBig);
+    interval = 360/nBig;
+    magnitude = 50;
+    offset = sin(deg2rad(0:interval:360-interval)) * magnitude;
+    
+    pol(1,:) = pol(1,:) + offset;
+    [cart(:,1),cart(:,2)] = pol2cart(deg2rad(pol(1,:)),pol(2,:));
+    
+    figure,
+    scatter(cart(:,1),cart(:,2))
+    axis square
+    
+    figure,
+    plot([cart(:,1);cart(:,2)]' - [stimCols(1,:),stimCols(2,:)])
+
+    % - % Attractor Points
+
+    stimCols_ap = generateStimCols('nBig',nBig);
+
+    attractorPoints =  [stimCols_ap(1,:),stimCols_ap(2,:)]; %[0,-38,38,0];
+    attractorWeights = zeros(1,nBig);%[20,30];
+    attractorWeights(16) = 20;
+    attractorWeights(40) = 30;
+
+    % - %
     
     
     % % Generate simulated data
-    
-%     [nll, data] = GenerativeModel([],...
-%         'nTrials',nTrials, ...
-%         'nBig',nBig, ...
-%         'nSmall',nSmall);
-    
-%     [nll, data] = GenerativeModel([],...
-%         'nTrials',nTrials,...
-%         'nBig',nBig, ...
-%         'nSmall',nSmall,...
-%         'dprime',1,...
-%         'stimulusRemapping',[cart(:,1);cart(:,2)]' - [stimCols(1,:),stimCols(2,:)]);
-    
-    stimCols = generateStimCols('nBig',nBig);
-
-    attractorPoints =  [stimCols(1,:),stimCols(2,:)]; %[0,-38,38,0];
-    attractorWeights = zeros(1,nBig);%[20,30];
-    attractorWeights(16) = 20;
-    attractorWeights(48) = 30;
-    
+      
     [nll, data] = GenerativeModel([],...
         'attractorPoints',attractorPoints,...
         'attractorWeights',attractorWeights,...
+        'stimulusRemappingCart',[cart(:,1);cart(:,2)]' - [stimCols(1,:),stimCols(2,:)],...
         'nTrials',nTrials,...
         'nBig',nBig,...
         'nSmall',nSmall);
@@ -143,16 +136,16 @@ end
 % x0 = lb + (ub-lb).*rand(1,numel(lb)); % random points between lb and ub
 % % --- % %
 
-% % --- for attractor dynamics --- % %
-% nAttactors = 2;
-% lb = [-50,-50,-50,-50,0,0]; % lower bound
-% ub = [50,50,50,50,80,80]; % upper bound                      
-% x0 = lb + (ub-lb).*rand(1,numel(lb)); % random points between lb and ub
-nAttactors = nBig;
-lb = [zeros(1,nBig)]; % lower bound
-ub = [ones(1,nBig)*30]; % upper bound                      
-x0 = lb + (ub-lb).*rand(1,numel(lb))/2; % random points between lb and ub
-% % --- % %
+% % % --- for attractor dynamics --- % %
+% % nAttactors = 2;
+% % lb = [-50,-50,-50,-50,0,0]; % lower bound
+% % ub = [50,50,50,50,80,80]; % upper bound                      
+% % x0 = lb + (ub-lb).*rand(1,numel(lb)); % random points between lb and ub
+% nAttactors = nBig;
+% lb = [zeros(1,nBig)]; % lower bound
+% ub = [ones(1,nBig)*30]; % upper bound                      
+% x0 = lb + (ub-lb).*rand(1,numel(lb))/2; % random points between lb and ub
+% % % --- % %
 
 % % ----- for d prime ----- % %
 % lb = 0; % lower bound
@@ -160,11 +153,18 @@ x0 = lb + (ub-lb).*rand(1,numel(lb))/2; % random points between lb and ub
 % x0 = lb + (ub-lb).*rand(1,numel(lb)); % random points between lb and ub
 % % --- % %
 
+% % stimulus remapping AND attractor dynamics
+nAttactors = nBig;
+lb = [(ones(1,nBig*2) * -35) + randn(1,nBig*2), zeros(1,nBig)]; % lower bound
+ub = [(ones(1,nBig*2) *  35) + randn(1,nBig*2), ones(1,nBig)*30]; % upper bound 
+x0 = [zeros(1,nBig*2) + randn(1,nBig*2), lb((nBig*2)+1:end) + (ub((nBig*2)+1:end)-lb((nBig*2)+1:end)).*rand(1,numel(lb((nBig*2)+1:end)))/2];
+% %
+
 
 optimisationMeta = [...      % what do the x values represent in the fitting? (1st column - is it passed, 2nd column - how many values would it be if it were)
     false,   nBig*nBig;...   % free similarityMatrix
     false,   1;...           % dprime
-    false,   nBig*2;...      % stimulus remapping (cartesian)
+    true,   nBig*2;...      % stimulus remapping (cartesian)
     false,   nBig;...        % stimulus remapping (polar, angle in degrees)
     false,   nAttactors*2;... % attractor points
     true,   nAttactors;...   % attractor weights
@@ -187,8 +187,8 @@ options = optimoptions('lsqnonlin',...
     'Display','iter-detailed',...
      'FunctionTolerance', 1e-25,...
      'StepTolerance', 1e-25,...
-     'DiffMinChange',8,...
-     'PlotFcn',@optimplotx_SimilarityMatrix);
+     'DiffMinChange',1);%,...
+   %  'PlotFcn',@optimplotx_SimilarityMatrix);
  %    'StepTolerance',1e-1000,...
  %     'FunctionTolerance', 1e-10
  %     ...
@@ -357,8 +357,30 @@ CI = nlparci(x,FVAL,'jacobian',JACOB);
 %%
 
 figure, hold on, 
-plot(x, 'DisplayName','x')
 plot(x0, 'DisplayName','x0')
-plot(attractorWeights, 'DisplayName','attractorWeights')
+plot(1:nBig,        cart(:,1) - stimCols(1,:)','DisplayName','stimulus remapping (x)')
+plot((1:nBig)+nBig, cart(:,2) - stimCols(2,:)','DisplayName','stimulus remapping (y)')
+plot((1:nAttactors)+nBig*2,attractorWeights, 'DisplayName','attractorWeights')
+plot(x, 'DisplayName','x')
 legend('Location','best')
 axis tight
+
+
+[~,data2] = f(x);
+
+figure,
+imagesc(data2.trialdata.similarityMatrix)
+axis equal tight
+colormap('gray')
+colorbar
+caxis([0 1])
+xlabel('Choice')
+ylabel('Cue')
+
+figure, hold on
+axis equal tight
+legend('Location','best')
+scatter(cart(:,1),cart(:,2),'DisplayName','true')
+scatter(stimCols(1,:)+x0(1:nBig),stimCols(2,:)+x0(nBig+1:2*nBig),'filled','DisplayName','x0')
+scatter(stimCols(1,:)+x(1:nBig),stimCols(2,:)+x(nBig+1:2*nBig),'filled','DisplayName','x')
+
