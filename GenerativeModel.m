@@ -135,16 +135,30 @@ if ~isnan(stimulusRemappingCart)
     stimCols_pr = stimCols + stimulusRemappingCart; %stimcols post-remap
     %disp(stimCols_pr(1,1:10))
 elseif ~isnan(stimulusRemappingPol)
-    % convert stimCols to polar
-    [stimCols_pol(1,:),stimCols_pol(2,:)] = cart2pol(stimCols(1,:),stimCols(2,:));
-    stimCols_pol(1,:) = rad2deg(stimCols_pol(1,:));
-    stimCols_pol(1,stimCols_pol(1,:) < 0) = stimCols_pol(1,stimCols_pol(1,:) < 0) + 360;
-    % apply stimulus remapping
-    stimCols_pol(1,:) = stimCols_pol(1,:) + stimulusRemappingPol;
-    stimCols_pol(stimCols_pol < 0)    = stimCols_pol(stimCols_pol < 0)    + 360;
-    stimCols_pol(stimCols_pol >= 360) = stimCols_pol(stimCols_pol >= 360) - 360;
-    % convert back to cartesian
-    [stimCols_pr(1,:),stimCols_pr(2,:)] = pol2cart(deg2rad(stimCols_pol(1,:)),stimCols_pol(2,:));
+    if 0 % polar angle offset version
+        % convert stimCols to polar
+        [stimCols_pol(1,:),stimCols_pol(2,:)] = cart2pol(stimCols(1,:),stimCols(2,:));
+        stimCols_pol(1,:) = rad2deg(stimCols_pol(1,:));
+        stimCols_pol(1,stimCols_pol(1,:) < 0) = stimCols_pol(1,stimCols_pol(1,:) < 0) + 360;
+        % apply stimulus remapping
+        stimCols_pol(1,:) = stimCols_pol(1,:) + stimulusRemappingPol;
+        stimCols_pol(stimCols_pol < 0)    = stimCols_pol(stimCols_pol < 0)    + 360;
+        stimCols_pol(stimCols_pol >= 360) = stimCols_pol(stimCols_pol >= 360) - 360;
+        % convert back to cartesian
+        [stimCols_pr(1,:),stimCols_pr(2,:)] = pol2cart(deg2rad(stimCols_pol(1,:)),stimCols_pol(2,:));
+    end
+    if 1 % "distance between points" version
+        % if using optimisers that don't allow for setting lower bounds we
+        % can manually enforce it here (hacky)
+        stimulusRemappingPol(stimulusRemappingPol<0) = 0;
+        % normalise input
+        stimulusRemappingPol = stimulusRemappingPol*(360/sum(stimulusRemappingPol));
+        % convert stimCols to polar
+        [~,stimCols_pol(2,:)] = cart2pol(stimCols(1,:),stimCols(2,:));
+        stimCols_pol(1,:) = cumsum([0,stimulusRemappingPol(1:end-1)]);
+        % convert back to cartesian
+        [stimCols_pr(1,:),stimCols_pr(2,:)] = pol2cart(deg2rad(stimCols_pol(1,:)),stimCols_pol(2,:));
+    end
 else
     stimCols_pr = stimCols;
 end
