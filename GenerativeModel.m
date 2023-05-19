@@ -229,7 +229,8 @@ if isnan(similarityMatrix)
 %     plot(x,perceptualFunc/max(perceptualFunc),':', 'LineWidth', 3, 'DisplayName','Perceptual Function')
 %     %figure,
 %     plot(x,combinedSim, '-', 'Color', [.1 .7 .1], 'LineWidth', 3, 'DisplayName', 'Combined Function')
-%     set(gca, 'XLim', [0 max(D(:))], 'XTick', [0,max(D(:))/2,max(D(:))], 'XTickLabels', {0,90,180}, 'YTick', [0 0.5 1], 'FontSize', 16);
+%     %set(gca, 'XLim', [0 max(D(:))], 'XTick', [0,max(D(:))/2,max(D(:))], 'XTickLabels', {0,90,180}, 'YTick', [0 0.5 1], 'FontSize', 16);
+%     set(gca, 'XLim', [0 max(D(:))], 'XTick', [0,max(D(:))/2,max(D(:))], 'YTick', [0 0.5 1], 'FontSize', 16);
 %     xlabel('Distance between colors')
 %     ylabel('Psychophysical Similarity')
 

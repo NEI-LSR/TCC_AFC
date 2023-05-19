@@ -21,15 +21,15 @@ stop = false;
 % 
 % dprime = x(end);
 
-% nBig = sqrt(length(x));
-% similarityMatrix = reshape(x,[nBig, nBig]);
+nBig = sqrt(length(x));
+similarityMatrix = reshape(x,[nBig, nBig]);
 
-[~, data] = GenerativeModel([],...
-    'attractorPoints',generateStimCols('nBig',64),...
-    'attractorWeights',x,...
-    'nBig',64);
-
-similarityMatrix = data.trialdata.similarityMatrix;
+% [~, data] = GenerativeModel([],...
+%     'attractorPoints',generateStimCols('nBig',64),...
+%     'attractorWeights',x,...
+%     'nBig',64);
+% 
+% similarityMatrix = data.trialdata.similarityMatrix;
 
 % c = forcezerominandonemax(x);
 % c(1) = c(1) + 0.0001;
