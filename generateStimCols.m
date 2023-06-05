@@ -95,7 +95,7 @@ if showFig
     figure(1000), hold on, axis equal
     stimCols_sRGB = LuvTosRGB([repelem(76.0693, nBig); cart(1,:);cart(2,:)]);
     colvals = im2double(stimCols_sRGB);
-    scatter(cart(1,:),cart(2,:),200,colvals,"filled")
+    scatter(cart(1,:),cart(2,:),[],colvals,"filled")
     % un-comment if you want labels
 %     for t = 1:nBig
 %         text(cart(1,t)+1.5, cart(2,t), num2str(t));
