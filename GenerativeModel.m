@@ -110,7 +110,7 @@ end
 %% Generate cues
 
 if any(isnan(stimCols)) %is stimCols == NaN
-    [stimCols, ~] = generateStimCols('nBig',nBig);
+    [stimCols, stimCols_polar] = generateStimCols('nBig',nBig);
 end
 
 if any(isnan(cueInd))
@@ -194,77 +194,62 @@ if isnan(similarityMatrix)
 
     % Inspired by `TCC_Code_InManuscriptOrder\Figure1\F\ShapeOfSimFunction`
     % [ref 1] (https://osf.io/j2h65)
-    %
-    % There's probably a slicker way of doing this, but I like that it is
-    % set up so that you can seperately control the similarity function and
-    % the perceptual function seperately, should we choose/need to do that
-    % at some point.
 
-    x = 0:0.1:300; % be careful if changing this - it will modify the convolution below, and also the scaling used to generate the similarity matrix (which depends on the interval, and the fact that this range starts at zero)
-
-    %lambda = -0.1;
-    similarityFunc = exp(x * lambda);
-
-    %sigma = 7; %
-    perceptualFunc = normpdf(x,0,sigma);
-
-    combinedSim = conv(...
-        padarray(similarityFunc,[0,length(similarityFunc)],'replicate'),...
-        perceptualFunc,...
-        'valid');
-    combinedSim = combinedSim(2:length(perceptualFunc)+1);
-    combinedSim = combinedSim/max(combinedSim);
-
-
-    D = zeros(nBig,nBig);
+    D = zeros(nBig,nBig); % distance (angular)
     for i = 1:nBig
-        D(i,:) = sqrt(((stimCols_pr(1,i) - stimCols_pr(1,:)).^2) + ((stimCols_pr(2,i) - stimCols_pr(2,:)).^2));
+        D(i,:) = rad2deg(angdiff(deg2rad(stimCols_polar(1,:)),deg2rad(stimCols_polar(1,i))));
     end
-
-%     figure, hold on,
-%     legend
-%     axis square
-%     plot(x,similarityFunc/max(similarityFunc),':', 'LineWidth', 3, 'DisplayName','Similarity Function')
-%     %figure,
-%     plot(x,perceptualFunc/max(perceptualFunc),':', 'LineWidth', 3, 'DisplayName','Perceptual Function')
-%     %figure,
-%     plot(x,combinedSim, '-', 'Color', [.1 .7 .1], 'LineWidth', 3, 'DisplayName', 'Combined Function')
-%     %set(gca, 'XLim', [0 max(D(:))], 'XTick', [0,max(D(:))/2,max(D(:))], 'XTickLabels', {0,90,180}, 'YTick', [0 0.5 1], 'FontSize', 16);
-%     set(gca, 'XLim', [0 max(D(:))], 'XTick', [0,max(D(:))/2,max(D(:))], 'YTick', [0 0.5 1], 'FontSize', 16);
-%     xlabel('Distance between colors')
-%     ylabel('Psychophysical Similarity')
-
-%     figure, hold on,
-%     axis square
-%     %plot([-(x(end:-1:1)),x],[combinedSim(end:-1:1),combinedSim], '-', 'Color', [.1 .7 .1], 'LineWidth', 3, 'DisplayName', 'Combined Function')
-%     plot([-(x(end:-1:1)),x],[combinedSim(end:-1:1),combinedSim]*3, '-', 'Color', [.1 .7 .1], 'LineWidth', 3, 'DisplayName', 'Combined Function')
-%     set(gca, 'XLim', [-max(D(:)) max(D(:))], 'XTick', [-max(D(:)),0,max(D(:))], 'XTickLabels', {-180,0,180}, 'Ylim', [-5,5], 'YTick', [-5 -3 -1 1 3 5], 'FontSize', 16, 'YAxisLocation','right');
-%     xlabel('Distance between colors')
-%     ylabel('Familiarity')
-% 
-%     plot([-(x(end:-1:1)),x],[combinedSim(end:-1:1),combinedSim]*3+randn(1,size(combinedSim,2)*2), 'ok', 'DisplayName', 'Combined Function')
 
 %     figure,
 %     imagesc(D)
+%     title('Distance')
 %     axis equal tight
 %     colormap('gray')
 %     colorbar
 %     %caxis([0 1])
 %     xlabel('Choice')
 %     ylabel('Cue')
+%     saveas(gcf,['distanceMatrix_',datestr(now,'yymmdd'),'.svg'])
 
-    similarityMatrix = combinedSim(round(D*abs(1/(x(1)-x(2))))+1);
+    x = -180:0.1:180;
+
+    fac = 2; % arbitrary, just for testing
+    skew = [(1:nBig)/fac; (nBig:-1:1)/fac]; % arbitrary, just for testing
+    %skew = ones(2,nBig)*30; % no skew
+    %     figure, plot(skew','o-'), axis tight
+
+    simFunc = zeros(nBig,length(x));
+    for row = 1:nBig
+        simFunc(row,:) = ...
+            [normpdf(x(x <= 0), 0, skew(1,row)) / max(normpdf(x(x <= 0), 0, skew(1,row))),...
+             normpdf(x(x >  0), 0, skew(2,row)) / max(normpdf(x(x >  0), 0, skew(2,row)))];
+    end
+
+%     figure, hold on, axis tight
+%     surf(simFunc,simFunc,'edgecolor','none')
+%     title('Similarity Function Set')
+%     colormap('gray')
+%     xline(find(x==0),'--r')
+%     view(2)
+%     colorbar
+%     set(gca, 'YDir','reverse')
+%     saveas(gcf,['SimilarityFunctionSet_',datestr(now,'yymmdd'),'.svg'])
+
+    similarityMatrix = NaN(nBig,nBig);
+    for row = 1:nBig
+        similarityMatrix(row,:) = simFunc(row,round(D(row,:)*abs(1/(x(1)-x(2)))) + find(x==0));
+    end
 
 %     figure,
 %     imagesc(similarityMatrix)
+%     title('Similarity Matrix')
 %     axis equal tight
 %     colormap('gray')
 %     colorbar
-%     caxis([0 1])
+%     %caxis([0 1])
 %     xlabel('Choice')
 %     ylabel('Cue')
-
-%     figure, plot(similarityMatrix(:,1))
+%     saveas(gcf,['SimilarityMatrix_',datestr(now,'yymmdd'),'.svg'])
 
 end
 
