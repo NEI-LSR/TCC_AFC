@@ -33,6 +33,7 @@ default_optimisationMeta      = NaN;  % optimisation metadata (What is contained
 default_forceNumerical        = false;
 default_lambda                = -0.1; % similarity function
 default_sigma                 = 7;    % perceptual function
+default_pltSimFigs            = false; % plot similarity function graphs
 
 errorMsg = 'Value must be positive, scalar, and numeric.';
 validationFcn = @(x) assert(isnumeric(x) && isscalar(x) && (x > 0),errorMsg);
@@ -56,6 +57,7 @@ addParameter(ip,'optimisationMeta',default_optimisationMeta)
 addParameter(ip,'forceNumerical',default_forceNumerical);
 addParameter(ip,'lambda',default_lambda);
 addParameter(ip,'sigma',default_sigma);
+addParameter(ip,'pltSimFigs',default_pltSimFigs)
 
 parse(ip,varargin{:});
 
@@ -77,6 +79,7 @@ om                    = ip.Results.optimisationMeta;
 forceNumerical        = ip.Results.forceNumerical;
 lambda                = ip.Results.lambda;
 sigma                 = ip.Results.sigma;
+pltSimFigs            = ip.Results.pltSimFigs;
 
 if ~isnan(om)
     if om(1,1)
@@ -200,56 +203,68 @@ if isnan(similarityMatrix)
         D(i,:) = rad2deg(angdiff(deg2rad(stimCols_polar(1,:)),deg2rad(stimCols_polar(1,i))));
     end
 
-%     figure,
-%     imagesc(D)
-%     title('Distance')
-%     axis equal tight
-%     colormap('gray')
-%     colorbar
-%     %caxis([0 1])
-%     xlabel('Choice')
-%     ylabel('Cue')
-%     saveas(gcf,['distanceMatrix_',datestr(now,'yymmdd'),'.svg'])
+    if pltSimFigs
+        figure,
+        imagesc(D)
+        title('Distance')
+        axis equal tight
+        colormap('gray')
+        colorbar
+        %caxis([0 1])
+        xlabel('Choice')
+        ylabel('Cue')
+        saveas(gcf,['distanceMatrix_',datestr(now,'yymmdd'),'.svg'])
+    end
 
     x = -180:0.1:180;
 
-    fac = 2; % arbitrary, just for testing
-    skew = [(1:nBig)/fac; (nBig:-1:1)/fac]; % arbitrary, just for testing
-    %skew = ones(2,nBig)*30; % no skew
-    %     figure, plot(skew','o-'), axis tight
+    sd = 30;
+
+    r = [0.1, 0.9];
+    skew = ((sin(deg2rad(linspace(0,360,nBig)))+1)/2);
+    skew = skew/(1/diff(r))+r(1);
+
+    %skew = linspace(0.1,0.9,nBig); % linear skew
+    %skew = ones(1,nBig)*0.5; % no skew
+
+    figure, plot(skew); axis tight % arbitrary, just for testing
+
+    SplitGauss = @(x,c,d) [exp(-((x(x<=0).^2)/(2*c^2))), exp(-((x(x>0).^2)/(2*d^2)))];
 
     simFunc = zeros(nBig,length(x));
-    for row = 1:nBig
-        simFunc(row,:) = ...
-            [normpdf(x(x <= 0), 0, skew(1,row)) / max(normpdf(x(x <= 0), 0, skew(1,row))),...
-             normpdf(x(x >  0), 0, skew(2,row)) / max(normpdf(x(x >  0), 0, skew(2,row)))];
+    for i = 1:nBig
+        simFunc(i,:) = SplitGauss(x, skew(i)*sd, (1-skew(i))*sd);
     end
 
-%     figure, hold on, axis tight
-%     surf(simFunc,simFunc,'edgecolor','none')
-%     title('Similarity Function Set')
-%     colormap('gray')
-%     xline(find(x==0),'--r')
-%     view(2)
-%     colorbar
-%     set(gca, 'YDir','reverse')
-%     saveas(gcf,['SimilarityFunctionSet_',datestr(now,'yymmdd'),'.svg'])
+    if pltSimFigs
+        figure, hold on, axis tight
+        surf(simFunc,simFunc,'edgecolor','none')
+        title('Similarity Function Set')
+        colormap('gray')
+        xline(find(x==0),'--r')
+        view(2)
+        colorbar
+        set(gca, 'YDir','reverse')
+        saveas(gcf,['SimilarityFunctionSet_',datestr(now,'yymmdd'),'.svg'])
+    end
 
     similarityMatrix = NaN(nBig,nBig);
     for row = 1:nBig
         similarityMatrix(row,:) = simFunc(row,round(D(row,:)*abs(1/(x(1)-x(2)))) + find(x==0));
     end
 
-%     figure,
-%     imagesc(similarityMatrix)
-%     title('Similarity Matrix')
-%     axis equal tight
-%     colormap('gray')
-%     colorbar
-%     %caxis([0 1])
-%     xlabel('Choice')
-%     ylabel('Cue')
-%     saveas(gcf,['SimilarityMatrix_',datestr(now,'yymmdd'),'.svg'])
+    if pltSimFigs
+        figure,
+        imagesc(similarityMatrix)
+        title('Similarity Matrix')
+        axis equal tight
+        colormap('gray')
+        colorbar
+        %caxis([0 1])
+        xlabel('Choice')
+        ylabel('Cue')
+        saveas(gcf,['SimilarityMatrix_',datestr(now,'yymmdd'),'.svg'])
+    end
 
 end
 
