@@ -3,7 +3,7 @@ clc,
 close all
 
 %%
-simdata_or_realdata = 'sim'; % 'sim' to simulate data, 'real' to load real data
+simdata_or_realdata = 'real'; % 'sim' to simulate data, 'real' to load real data
 
 if strcmp(simdata_or_realdata,'sim') % simuldated data
     
@@ -280,8 +280,6 @@ f = @(x)GenerativeModel(x,... % anonymous function so that we can pass additiona
     'nBig',nBig, ...
     'nSmall',nSmall,...
     'dprime',2.443912865562119,...
-    'lambda',-0.015041279678144,...
-    'sigma',3.913215487407419,...
     'optimisationMeta',optimisationMeta); % add stimCols to speed up slightly
 
 

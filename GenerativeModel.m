@@ -33,6 +33,7 @@ default_optimisationMeta      = NaN;  % optimisation metadata (What is contained
 default_forceNumerical        = false;
 default_lambda                = -0.1; % similarity function
 default_sigma                 = 7;    % perceptual function
+default_skewedGaussians       = NaN;
 default_pltSimFigs            = false; % plot similarity function graphs
 
 errorMsg = 'Value must be positive, scalar, and numeric.';
@@ -57,6 +58,7 @@ addParameter(ip,'optimisationMeta',default_optimisationMeta)
 addParameter(ip,'forceNumerical',default_forceNumerical);
 addParameter(ip,'lambda',default_lambda);
 addParameter(ip,'sigma',default_sigma);
+addParameter(ip,'skewedGaussians',default_skewedGaussians)
 addParameter(ip,'pltSimFigs',default_pltSimFigs)
 
 parse(ip,varargin{:});
@@ -79,6 +81,7 @@ om                    = ip.Results.optimisationMeta;
 forceNumerical        = ip.Results.forceNumerical;
 lambda                = ip.Results.lambda;
 sigma                 = ip.Results.sigma;
+skewedGaussians       = ip.Results.skewedGaussians;
 pltSimFigs            = ip.Results.pltSimFigs;
 
 if ~isnan(om)
@@ -113,7 +116,7 @@ end
 %% Generate cues
 
 if any(isnan(stimCols)) %is stimCols == NaN
-    [stimCols, stimCols_polar] = generateStimCols('nBig',nBig);
+    [stimCols, stimCols_pol] = generateStimCols('nBig',nBig);
 end
 
 if any(isnan(cueInd))
@@ -138,32 +141,20 @@ if ~isnan(stimulusRemappingCart)
     stimCols_pr = stimCols + stimulusRemappingCart; %stimcols post-remap
     %disp(stimCols_pr(1,1:10))
 elseif ~isnan(stimulusRemappingPol)
-    if 0 % polar angle offset version
-        % convert stimCols to polar
-        [stimCols_pol(1,:),stimCols_pol(2,:)] = cart2pol(stimCols(1,:),stimCols(2,:));
-        stimCols_pol(1,:) = rad2deg(stimCols_pol(1,:));
-        stimCols_pol(1,stimCols_pol(1,:) < 0) = stimCols_pol(1,stimCols_pol(1,:) < 0) + 360;
-        % apply stimulus remapping
-        stimCols_pol(1,:) = stimCols_pol(1,:) + stimulusRemappingPol;
-        stimCols_pol(stimCols_pol < 0)    = stimCols_pol(stimCols_pol < 0)    + 360;
-        stimCols_pol(stimCols_pol >= 360) = stimCols_pol(stimCols_pol >= 360) - 360;
-        % convert back to cartesian
-        [stimCols_pr(1,:),stimCols_pr(2,:)] = pol2cart(deg2rad(stimCols_pol(1,:)),stimCols_pol(2,:));
-    end
-    if 1 % "distance between points" version
+    % "distance between points" version
         % if using optimisers that don't allow for setting lower bounds we
         % can manually enforce it here (hacky)
         stimulusRemappingPol(stimulusRemappingPol<0) = 0;
         % normalise input
         stimulusRemappingPol = stimulusRemappingPol*(360/sum(stimulusRemappingPol));
         % convert stimCols to polar
-        [~,stimCols_pol(2,:)] = cart2pol(stimCols(1,:),stimCols(2,:));
-        stimCols_pol(1,:) = cumsum([0,stimulusRemappingPol(1:end-1)]);
+        [~,stimCols_pol_pr(2,:)] = cart2pol(stimCols(1,:),stimCols(2,:));
+        stimCols_pol_pr(1,:) = cumsum([0,stimulusRemappingPol(1:end-1)]);
         % convert back to cartesian
-        [stimCols_pr(1,:),stimCols_pr(2,:)] = pol2cart(deg2rad(stimCols_pol(1,:)),stimCols_pol(2,:));
-    end
+        [stimCols_pr(1,:),stimCols_pr(2,:)] = pol2cart(deg2rad(stimCols_pol_pr(1,:)),stimCols_pol_pr(2,:));
 else
     stimCols_pr = stimCols;
+    stimCols_pol_pr = stimCols_pol;
 end
 
 %% Generate response options
@@ -200,7 +191,7 @@ if isnan(similarityMatrix)
 
     D = zeros(nBig,nBig); % distance (angular)
     for i = 1:nBig
-        D(i,:) = rad2deg(angdiff(deg2rad(stimCols_polar(1,:)),deg2rad(stimCols_polar(1,i))));
+        D(i,:) = rad2deg(angdiff(deg2rad(stimCols_pol_pr(1,:)),deg2rad(stimCols_pol_pr(1,i))));
     end
 
     if pltSimFigs
@@ -220,20 +211,24 @@ if isnan(similarityMatrix)
 
     sd = 30;
 
-    r = [0.1, 0.9];
-    skew = ((sin(deg2rad(linspace(0,360,nBig)))+1)/2);
-    skew = skew/(1/diff(r))+r(1);
+    % r = [0.1, 0.9];
+    % skewedGaussians = ((sin(deg2rad(linspace(0,360,nBig)))+1)/2);
+    % skewedGaussians = skewedGaussians/(1/diff(r))+r(1);
 
-    %skew = linspace(0.1,0.9,nBig); % linear skew
-    %skew = ones(1,nBig)*0.5; % no skew
+    %skewedGaussians = linspace(0.1,0.9,nBig); % linear skew
+    %skewedGaussians = ones(1,nBig)*0.5; % no skew
 
-    figure, plot(skew); axis tight % arbitrary, just for testing
+    %figure, plot(skewedGaussians); axis tight % arbitrary, just for testing
 
-    SplitGauss = @(x,c,d) [exp(-((x(x<=0).^2)/(2*c^2))), exp(-((x(x>0).^2)/(2*d^2)))];
+    if isnan(skewedGaussians)
+        skewedGaussians = ones(nBig,1)*0.5;
+    end
+
+    SplitGauss = @(x,sd_left,sd_right) [exp(-((x(x<=0).^2)/(2*sd_left^2))), exp(-((x(x>0).^2)/(2*sd_right^2)))];
 
     simFunc = zeros(nBig,length(x));
     for i = 1:nBig
-        simFunc(i,:) = SplitGauss(x, skew(i)*sd, (1-skew(i))*sd);
+        simFunc(i,:) = SplitGauss(x, skewedGaussians(i)*sd, (1-skewedGaussians(i))*sd);
     end
 
     if pltSimFigs
