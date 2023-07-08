@@ -34,6 +34,7 @@ default_forceNumerical        = false;
 default_lambda                = -0.1; % similarity function
 default_sigma                 = 7;    % perceptual function
 default_skewedGaussians       = NaN;
+default_SimFunc_sd             = 60;
 default_pltSimFigs            = false; % plot similarity function graphs
 
 errorMsg = 'Value must be positive, scalar, and numeric.';
@@ -59,6 +60,7 @@ addParameter(ip,'forceNumerical',default_forceNumerical);
 addParameter(ip,'lambda',default_lambda);
 addParameter(ip,'sigma',default_sigma);
 addParameter(ip,'skewedGaussians',default_skewedGaussians)
+addParameter(ip,'SimFunc_sd',default_SimFunc_sd)
 addParameter(ip,'pltSimFigs',default_pltSimFigs)
 
 parse(ip,varargin{:});
@@ -81,7 +83,8 @@ om                    = ip.Results.optimisationMeta;
 forceNumerical        = ip.Results.forceNumerical;
 lambda                = ip.Results.lambda;
 sigma                 = ip.Results.sigma;
-skewedGaussians       = ip.Results.skewedGaussians;
+skewedGaussians       = ip.Results.skewedGaussians;         
+SimFunc_sd            = ip.Results.SimFunc_sd;
 pltSimFigs            = ip.Results.pltSimFigs;
 
 if ~isnan(om)
@@ -209,8 +212,6 @@ if isnan(similarityMatrix)
 
     x = -180:0.1:180;
 
-    sd = 30;
-
     % r = [0.1, 0.9];
     % skewedGaussians = ((sin(deg2rad(linspace(0,360,nBig)))+1)/2);
     % skewedGaussians = skewedGaussians/(1/diff(r))+r(1);
@@ -220,15 +221,15 @@ if isnan(similarityMatrix)
 
     %figure, plot(skewedGaussians); axis tight % arbitrary, just for testing
 
-    if isnan(skewedGaussians)
-        skewedGaussians = ones(nBig,1)*0.5;
+    if isnan(skewedGaussians) % no skew
+        skewedGaussians = ones(nBig,1) * 0.5;
     end
 
     SplitGauss = @(x,sd_left,sd_right) [exp(-((x(x<=0).^2)/(2*sd_left^2))), exp(-((x(x>0).^2)/(2*sd_right^2)))];
 
     simFunc = zeros(nBig,length(x));
     for i = 1:nBig
-        simFunc(i,:) = SplitGauss(x, skewedGaussians(i)*sd, (1-skewedGaussians(i))*sd);
+        simFunc(i,:) = SplitGauss(x, skewedGaussians(i)*SimFunc_sd, (1-skewedGaussians(i))*SimFunc_sd);
     end
 
     if pltSimFigs
