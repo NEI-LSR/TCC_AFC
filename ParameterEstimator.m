@@ -89,7 +89,7 @@ if strcmp(simdata_or_realdata,'sim') % simuldated data
 elseif strcmp(simdata_or_realdata,'real') % real data
 
     %     filepath = 'Y:\PROJECTS\CausalGlobs\data\';
-    filepath = 'C:\Users\cege-user\Dropbox\Documents\MATLAB\CausalGlobs\data\';
+    filepath = 'C:\Users\cege-user\Dropbox\Documents\MATLAB\CausalGlobs\data\'; !!!!!!!!!!!!!!!
     %filename = '210422--211012_Pollux_data';
     %filename = '210517--211108_Castor_data.mat';
     %filename = '220322--220823_Morty_data.mat';

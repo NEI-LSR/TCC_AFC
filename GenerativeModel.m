@@ -34,7 +34,7 @@ default_forceNumerical        = false;
 default_lambda                = -0.1; % similarity function
 default_sigma                 = 7;    % perceptual function
 default_skewedGaussians       = NaN;
-default_SimFunc_sd             = 60;
+default_SimFunc_sd            = 60;
 default_pltSimFigs            = false; % plot similarity function graphs
 
 errorMsg = 'Value must be positive, scalar, and numeric.';
