@@ -2,6 +2,9 @@ clear,
 clc, 
 close all
 
+addpath(genpath('C:\toolbox\bads'))
+addpath(genpath('C:\Users\cege-user\Documents\MacaqueColorCategories\Analyses'))
+
 %%
 simdata_or_realdata = 'real'; % 'sim' to simulate data, 'real' to load real data
 
@@ -213,12 +216,11 @@ nAttactors = 0;
 % 
 % % % --- % %
 
-% % % --- skewed gaussians ---
-% lb = zeros(1,nBig); % lower bound
-% ub = ones(1,nBig); % upper bound 
-% % x0 = ones(1,nBig) * 0.5;
-% x0 = rand(nBig,1);
-% %
+% % --- skewed gaussians ---
+lb = zeros(1,nBig); % lower bound
+ub = ones(1,nBig); % upper bound 
+x0 = rand(nBig,1);
+%
 
 % % % --- SimFunc_sd and skewed gaussians ---
 % lb = [20, zeros(1,nBig)]; % lower bound
@@ -227,20 +229,20 @@ nAttactors = 0;
 % x0 = [50,rand(1,nBig)];
 % % %
 
-% % d-prime and SimFunc_sd % %
-lb = [0.1, 1]; % lower bound
-ub = [50, 200]; % upper bound 
-x0 = [2, 50];
+% % % d-prime and SimFunc_sd % %
+% lb = [0.1, 1]; % lower bound
+% ub = [50, 200]; % upper bound 
+% x0 = [2, 50];
 
 optimisationMeta = [...      % what do the x values represent in the fitting? (1st column - is it passed, 2nd column - how many values would it be if it were)
     false,   nBig*nBig;...   % free similarityMatrix
-    true,   1;...           % dprime
+    false,   1;...           % dprime
     false,   nBig*2;...      % stimulus remapping (cartesian)
     false,   nBig;...        % stimulus remapping (polar, angle in degrees)
     false,   nAttactors*2;... % attractor points
     false,   nAttactors;...   % attractor weights
-    true,    1;...           % SimFunc_sd
-    false,    nBig,...        % skewedGaussians              
+    false,    1;...           % SimFunc_sd
+    true,    nBig,...        % skewedGaussians              
     ];
 
 % options = optimoptions('lsqnonlin',...
@@ -302,10 +304,9 @@ f = @(x)GenerativeModel(x,... % anonymous function so that we can pass additiona
     'nTrials',nTrials,...
     'nBig',nBig, ...
     'nSmall',nSmall,...
-    'dprime',2,...
-    'SimFunc_sd',30,...
+    'dprime',1.4977,...
+    'SimFunc_sd',39.1110,...
     'optimisationMeta',optimisationMeta); % add stimCols to speed up slightly
-
 
 tic % timing test
 nll0 = f(x0);
@@ -315,10 +316,10 @@ tic % second timing test, because the first is always slow
 nll0 = f(x0);
 toc
 
-[~,data2] = f(x0);
+[~,data_x0] = f(x0);
 
 figure,
-imagesc(data2.trialdata.similarityMatrix)
+imagesc(data_x0.trialdata.similarityMatrix)
 axis equal tight
 colormap('gray')
 colorbar
@@ -330,12 +331,12 @@ title('x0 matrix')
 
 %% Recovery - Run optimizer
 
-% x = lsqnonlin(f,x0,lb,ub,options);
+x = lsqnonlin(f,x0,lb,ub,options);
 % [x,Resnorm,FVAL,EXITFLAG,OUTPUT,LAMBDA,JACOB] = lsqnonlin(f,x0,lb,ub,options);
 
 % CI = nlparci(x,FVAL,'jacobian',JACOB);
 % 
-x = bads(f,x0,lb,ub);
+% x = bads(f,x0,lb,ub);
 
 
 %% Plotting results
@@ -345,10 +346,10 @@ x = bads(f,x0,lb,ub);
 % axis equal square
 % plot([0,1],[0,1],'k')
 
-[~,data3] = f(x);
+[nll_x,data_x] = f(x);
 
 figure,
-imagesc(data3.trialdata.similarityMatrix)
+imagesc(data_x.trialdata.similarityMatrix)
 axis equal tight
 colormap('gray')
 colorbar
@@ -426,6 +427,8 @@ title('Recovered matrix')
 %% Compute AIC/BIC
 
 % numParam = length(x);
-% 
-% [aic,bic] = aicbic(-nll_x,numParam,nTrials);
-% % [aic,bic] = aicbic(-nll_x,numParam,nTrials,Normalize=true);
+numParam = length(x)+2;
+warning('Reminder: Do you need to add any other parameters?')
+
+[aic,bic] = aicbic(-nll_x,numParam,nTrials);
+% [aic,bic] = aicbic(-nll_x,numParam,nTrials,Normalize=true);
