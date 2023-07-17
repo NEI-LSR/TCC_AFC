@@ -3,7 +3,7 @@ clc,
 close all
 
 %%
-simdata_or_realdata = 'sim'; % 'sim' to simulate data, 'real' to load real data
+simdata_or_realdata = 'real'; % 'sim' to simulate data, 'real' to load real data
 
 if strcmp(simdata_or_realdata,'sim') % simuldated data
     
@@ -229,7 +229,7 @@ nAttactors = 0;
 
 % % d-prime and SimFunc_sd % %
 lb = [0.1, 1]; % lower bound
-ub = [7, 200]; % upper bound 
+ub = [50, 200]; % upper bound 
 x0 = [2, 50];
 
 optimisationMeta = [...      % what do the x values represent in the fitting? (1st column - is it passed, 2nd column - how many values would it be if it were)
