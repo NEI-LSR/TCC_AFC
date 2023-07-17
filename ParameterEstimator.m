@@ -179,11 +179,11 @@ nAttactors = 0;
 % x0 = [zeros(1,nBig*2) + randn(1,nBig*2), lb((nBig*2)+1:end) + (ub((nBig*2)+1:end)-lb((nBig*2)+1:end)).*rand(1,numel(lb((nBig*2)+1:end)))/2];
 % % %
 
-% stimulus remapping (angle) 
-lb = zeros(1,nBig) + 0.01; % lower bound
-ub = (ones(1,nBig) *  100) + rand(1,nBig); % upper bound 
-x0 = ones(1,nBig) + rand(1,nBig);
-%
+% % stimulus remapping (angle) 
+% lb = zeros(1,nBig) + 0.01; % lower bound
+% ub = (ones(1,nBig) *  100) + rand(1,nBig); % upper bound 
+% x0 = ones(1,nBig) + rand(1,nBig);
+% %
 
 % % % stimulus remapping (angle) AND attractor dynamics
 % nAttactors = nBig;
@@ -234,6 +234,12 @@ x0 = ones(1,nBig) + rand(1,nBig);
 % ub = [50, 200]; % upper bound 
 % x0 = [2, 50];
 
+% stimulus remapping AND skewed gaussians
+lb = zeros(1,nBig*2) + 0.001; % lower bound
+ub = ones(1,nBig*2) + rand(1,nBig*2)/100; % upper bound 
+x0 = ones(1,nBig*2)*0.5 + (rand(1,nBig*2)-0.5);
+%
+
 optimisationMeta = [...      % what do the x values represent in the fitting? (1st column - is it passed, 2nd column - how many values would it be if it were)
     false,   nBig*nBig;...   % free similarityMatrix
     false,   1;...           % dprime
@@ -242,7 +248,7 @@ optimisationMeta = [...      % what do the x values represent in the fitting? (1
     false,   nAttactors*2;... % attractor points
     false,   nAttactors;...   % attractor weights
     false,    1;...           % SimFunc_sd
-    false,    nBig,...        % skewedGaussians              
+    true,    nBig,...        % skewedGaussians              
     ];
 
 % options = optimoptions('lsqnonlin',...
@@ -271,7 +277,7 @@ options = optimoptions('lsqnonlin',...
     'FunctionTolerance', 1e-50,...
      'StepTolerance', 1e-50,...
      'PlotFcn',@optimplotx,...
-     'DiffMinChange',1);
+     'DiffMinChange',0.1);
 
 % options = optimoptions('lsqnonlin',...
 %     'Display','iter-detailed',...
