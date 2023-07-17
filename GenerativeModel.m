@@ -31,8 +31,6 @@ default_attractorPoints       = NaN;  % NaN = no attractor points
 default_attractorWeights      = NaN;  % NaN = no attractor weights
 default_optimisationMeta      = NaN;  % optimisation metadata (What is contained in `optimisationParams`?)
 default_forceNumerical        = false;
-default_lambda                = -0.1; % similarity function
-default_sigma                 = 7;    % perceptual function
 default_skewedGaussians       = NaN;
 default_SimFunc_sd            = 60;
 default_pltSimFigs            = false; % plot similarity function graphs
@@ -57,8 +55,6 @@ addParameter(ip,'attractorPoints',default_attractorPoints)
 addParameter(ip,'attractorWeights',default_attractorWeights)
 addParameter(ip,'optimisationMeta',default_optimisationMeta)
 addParameter(ip,'forceNumerical',default_forceNumerical);
-addParameter(ip,'lambda',default_lambda);
-addParameter(ip,'sigma',default_sigma);
 addParameter(ip,'skewedGaussians',default_skewedGaussians)
 addParameter(ip,'SimFunc_sd',default_SimFunc_sd)
 addParameter(ip,'pltSimFigs',default_pltSimFigs)
@@ -81,12 +77,11 @@ attractorPoints       = ip.Results.attractorPoints;
 attractorWeights      = ip.Results.attractorWeights;
 om                    = ip.Results.optimisationMeta;
 forceNumerical        = ip.Results.forceNumerical;
-lambda                = ip.Results.lambda;
-sigma                 = ip.Results.sigma;
 skewedGaussians       = ip.Results.skewedGaussians;         
 SimFunc_sd            = ip.Results.SimFunc_sd;
 pltSimFigs            = ip.Results.pltSimFigs;
 
+% Overwrite if passed within optimisationMeta (used for model fitting)
 if ~isnan(om)
     if om(1,1)
         similarityVector       = optimisationParams(1 : om(1,2));
@@ -108,13 +103,10 @@ if ~isnan(om)
         attractorWeights       = optimisationParams(sum(prod(om(1:5,:),2)) + 1 : sum(prod(om(1:6,:),2)));
     end
     if om(7,1)
-        lambda                 = optimisationParams(sum(prod(om(1:6,:),2)) + 1 : sum(prod(om(1:7,:),2)));
+        SimFunc_sd             = optimisationParams(sum(prod(om(1:6,:),2)) + 1 : sum(prod(om(1:7,:),2)));
     end
     if om(8,1)
-        sigma                  = optimisationParams(sum(prod(om(1:7,:),2)) + 1 : sum(prod(om(1:8,:),2)));
-    end
-    if om(9,1)
-        skewedGaussians        = optimisationParams(sum(prod(om(1:8,:),2)) + 1 : sum(prod(om(1:9,:),2)));
+        skewedGaussians        = optimisationParams(sum(prod(om(1:7,:),2)) + 1 : sum(prod(om(1:8,:),2)));
     end
 end
 
@@ -210,7 +202,7 @@ if isnan(similarityMatrix)
         %caxis([0 1])
         xlabel('Choice')
         ylabel('Cue')
-        saveas(gcf,['distanceMatrix_',datestr(now,'yymmdd'),'.svg'])
+        %saveas(gcf,['distanceMatrix_',datestr(now,'yymmdd'),'.svg'])
     end
 
     x = -180:0.1:180;
@@ -219,7 +211,9 @@ if isnan(similarityMatrix)
         skewedGaussians = ones(nBig,1) * 0.5;
     end
 
-    SplitGauss = @(x,sd_left,sd_right) [exp(-((x(x<=0).^2)/(2*sd_left^2))), exp(-((x(x>0).^2)/(2*sd_right^2)))]; % TODO Make more readable
+    SplitGauss = @(x,sd_left,sd_right) [...
+        exp(-((x(x<=0).^2)/(2*sd_left^2))),...
+        exp(-((x(x> 0).^2)/(2*sd_right^2)))]; 
 
     simFunc = zeros(nBig,length(x));
     for i = 1:nBig
@@ -229,15 +223,22 @@ if isnan(similarityMatrix)
     end
 
     if pltSimFigs
+
+        figure,
+        plot(x,simFunc(1,:),'k')
+        title('Similarity function for cue #1')
+        axis tight
+
         figure, hold on, axis tight
-        surf(simFunc,simFunc,'edgecolor','none')
+        surf(simFunc,simFunc,'edgecolor','none')                            % TODO Make it so that the x-axis shows x
         title('Similarity Function Set')
         colormap('gray')
         xline(find(x==0),'--r')
         view(2)
         colorbar
         set(gca, 'YDir','reverse')
-        saveas(gcf,['SimilarityFunctionSet_',datestr(now,'yymmdd'),'.svg'])
+        %saveas(gcf,['SimilarityFunctionSet_',datestr(now,'yymmdd'),'.svg'])
+
     end
 
     similarityMatrix = NaN(nBig,nBig);
@@ -255,7 +256,7 @@ if isnan(similarityMatrix)
         %caxis([0 1])
         xlabel('Choice')
         ylabel('Cue')
-        saveas(gcf,['SimilarityMatrix_',datestr(now,'yymmdd'),'.svg'])
+        %saveas(gcf,['SimilarityMatrix_',datestr(now,'yymmdd'),'.svg'])
     end
 
 end

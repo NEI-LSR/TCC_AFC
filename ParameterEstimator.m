@@ -61,23 +61,27 @@ if strcmp(simdata_or_realdata,'sim') % simuldated data
 %         'nBig',nBig,...
 %         'nSmall',nSmall);
 
-    r = [0.1, 0.9];
-    x_real = ((sin(deg2rad(linspace(0,360,nBig)))+1)/2);
-    x_real = x_real/(1/diff(r))+r(1);
-    
+    % r = [0.1, 0.9];
+    % skewedGaussians = ((sin(deg2rad(linspace(0,360,nBig)))+1)/2);
+    % skewedGaussians = skewedGaussians/(1/diff(r))+r(1);
+    % 
     % skewedGaussians = linspace(0.1,0.9,nBig); % linear skew
     % skewedGaussians = ones(1,nBig)*0.5; % no skew
     
-    figure, plot(x_real); axis tight % arbitrary, just for testing
+    % figure, plot(skewedGaussians); axis tight % arbitrary, just for testing
+
+    dprime = 1 + 2/3;
+    SimFunc_sd = 100*(2/3);
 
     [nll, data] = GenerativeModel([],...
-        'dprime',2,...
-        'SimFunc_sd', 30,...
+        'dprime',dprime,...
+        'SimFunc_sd', SimFunc_sd,...
         'nTrials',nTrials,...
         'nBig',nBig,...
         'nSmall',nSmall,...
-        'skewedGaussians',x_real,...
         'pltSimFigs',true);
+
+            % 
     
     choiceInds =    cell2mat(data.trialdata.choices)';
     cueInd =        cell2mat(data.trialdata.cues);
@@ -209,23 +213,34 @@ nAttactors = 0;
 % 
 % % % --- % %
 
-% % --- skewed gaussians ---
-lb = zeros(1,nBig); % lower bound
-ub = ones(1,nBig); % upper bound 
-% x0 = ones(1,nBig) * 0.5;
-x0 = rand(nBig,1);
+% % % --- skewed gaussians ---
+% lb = zeros(1,nBig); % lower bound
+% ub = ones(1,nBig); % upper bound 
+% % x0 = ones(1,nBig) * 0.5;
+% x0 = rand(nBig,1);
 % %
+
+% % % --- SimFunc_sd and skewed gaussians ---
+% lb = [20, zeros(1,nBig)]; % lower bound
+% ub = [100, ones(1,nBig)]; % upper bound 
+% % x0 = ones(1,nBig) * 0.5;
+% x0 = [50,rand(1,nBig)];
+% % %
+
+% % d-prime and SimFunc_sd % %
+lb = [0.1, 1]; % lower bound
+ub = [7, 200]; % upper bound 
+x0 = [2, 50];
 
 optimisationMeta = [...      % what do the x values represent in the fitting? (1st column - is it passed, 2nd column - how many values would it be if it were)
     false,   nBig*nBig;...   % free similarityMatrix
-    false,   1;...           % dprime
+    true,   1;...           % dprime
     false,   nBig*2;...      % stimulus remapping (cartesian)
     false,   nBig;...        % stimulus remapping (polar, angle in degrees)
     false,   nAttactors*2;... % attractor points
     false,   nAttactors;...   % attractor weights
-    false,   1;...           % lambda
-    false,   1;...           % sigma
-    true,    nBig,...        % skewedGaussians              
+    true,    1;...           % SimFunc_sd
+    false,    nBig,...        % skewedGaussians              
     ];
 
 % options = optimoptions('lsqnonlin',...
@@ -288,7 +303,7 @@ f = @(x)GenerativeModel(x,... % anonymous function so that we can pass additiona
     'nBig',nBig, ...
     'nSmall',nSmall,...
     'dprime',2,...
-    'SimFunc_sd', 30,...
+    'SimFunc_sd',30,...
     'optimisationMeta',optimisationMeta); % add stimCols to speed up slightly
 
 
@@ -310,25 +325,44 @@ colorbar
 caxis([0 1])
 xlabel('Choice')
 ylabel('Cue')
+title('x0 matrix')
 
 
 %% Recovery - Run optimizer
 
-x = lsqnonlin(f,x0,lb,ub,options);
+% x = lsqnonlin(f,x0,lb,ub,options);
 % [x,Resnorm,FVAL,EXITFLAG,OUTPUT,LAMBDA,JACOB] = lsqnonlin(f,x0,lb,ub,options);
 
 % CI = nlparci(x,FVAL,'jacobian',JACOB);
 % 
-% x = bads(f,x0,lb,ub);
+x = bads(f,x0,lb,ub);
 
 
 %% Plotting results
 
+% figure, hold on
+% scatter(skewedGaussians,x,'k*');
+% axis equal square
+% plot([0,1],[0,1],'k')
+
+[~,data3] = f(x);
+
 figure,
-scatter(x_real,x,'k*');
-axis equal square
-hold on
-plot([0,1],[0,1],'k')
+imagesc(data3.trialdata.similarityMatrix)
+axis equal tight
+colormap('gray')
+colorbar
+caxis([0 1])
+xlabel('Choice')
+ylabel('Cue')
+title('Recovered matrix')
+
+
+
+
+
+% disp(SimFunc_sd);
+% disp(x(1));
 
 % % angles
 % x0_norm = x0(1:nBig)*(360/sum(x0(1:nBig)));
@@ -391,7 +425,7 @@ plot([0,1],[0,1],'k')
 
 %% Compute AIC/BIC
 
-numParam = length(x);
-
-[aic,bic] = aicbic(-nll_x,numParam,nTrials);
-% [aic,bic] = aicbic(-nll_x,numParam,nTrials,Normalize=true);
+% numParam = length(x);
+% 
+% [aic,bic] = aicbic(-nll_x,numParam,nTrials);
+% % [aic,bic] = aicbic(-nll_x,numParam,nTrials,Normalize=true);
