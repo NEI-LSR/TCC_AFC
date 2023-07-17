@@ -179,11 +179,11 @@ nAttactors = 0;
 % x0 = [zeros(1,nBig*2) + randn(1,nBig*2), lb((nBig*2)+1:end) + (ub((nBig*2)+1:end)-lb((nBig*2)+1:end)).*rand(1,numel(lb((nBig*2)+1:end)))/2];
 % % %
 
-% % stimulus remapping (angle) 
-% lb = zeros(1,nBig) + 0.01; % lower bound
-% ub = (ones(1,nBig) *  100) + rand(1,nBig); % upper bound 
-% x0 = ones(1,nBig) + rand(1,nBig);
-% %
+% stimulus remapping (angle) 
+lb = zeros(1,nBig) + 0.01; % lower bound
+ub = (ones(1,nBig) *  100) + rand(1,nBig); % upper bound 
+x0 = ones(1,nBig) + rand(1,nBig);
+%
 
 % % % stimulus remapping (angle) AND attractor dynamics
 % nAttactors = nBig;
@@ -216,11 +216,11 @@ nAttactors = 0;
 % 
 % % % --- % %
 
-% % --- skewed gaussians ---
-lb = zeros(1,nBig); % lower bound
-ub = ones(1,nBig); % upper bound 
-x0 = rand(nBig,1);
-%
+% % % --- skewed gaussians ---
+% lb = zeros(1,nBig); % lower bound
+% ub = ones(1,nBig); % upper bound 
+% x0 = rand(nBig,1);
+% %
 
 % % % --- SimFunc_sd and skewed gaussians ---
 % lb = [20, zeros(1,nBig)]; % lower bound
@@ -238,11 +238,11 @@ optimisationMeta = [...      % what do the x values represent in the fitting? (1
     false,   nBig*nBig;...   % free similarityMatrix
     false,   1;...           % dprime
     false,   nBig*2;...      % stimulus remapping (cartesian)
-    false,   nBig;...        % stimulus remapping (polar, angle in degrees)
+    true,   nBig;...        % stimulus remapping (polar, angle in degrees)
     false,   nAttactors*2;... % attractor points
     false,   nAttactors;...   % attractor weights
     false,    1;...           % SimFunc_sd
-    true,    nBig,...        % skewedGaussians              
+    false,    nBig,...        % skewedGaussians              
     ];
 
 % options = optimoptions('lsqnonlin',...
@@ -266,16 +266,16 @@ optimisationMeta = [...      % what do the x values represent in the fitting? (1
  %     'FunctionTolerance', 1e-10
  %     ...
 
-% options = optimoptions('lsqnonlin',...
-%     'Display','iter-detailed',...
-%     'FunctionTolerance', 1e-50,...
-%      'StepTolerance', 1e-50,...
-%      'PlotFcn',@optimplotx,...
-%      'DiffMinChange',1);
-
 options = optimoptions('lsqnonlin',...
     'Display','iter-detailed',...
-    'PlotFcn',@optimplotx);
+    'FunctionTolerance', 1e-50,...
+     'StepTolerance', 1e-50,...
+     'PlotFcn',@optimplotx,...
+     'DiffMinChange',1);
+
+% options = optimoptions('lsqnonlin',...
+%     'Display','iter-detailed',...
+%     'PlotFcn',@optimplotx);
 
 if optimisationMeta(1,1)
     options = optimoptions('lsqnonlin',...
