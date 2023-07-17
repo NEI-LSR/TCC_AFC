@@ -3,37 +3,36 @@ clc,
 close all
 
 %%
-simdata_or_realdata = 'real'; % 'sim' to simulate data, 'real' to load real data
+simdata_or_realdata = 'sim'; % 'sim' to simulate data, 'real' to load real data
 
 if strcmp(simdata_or_realdata,'sim') % simuldated data
     
     nTrials = 50000;
     nBig = 64;
     nSmall = 4;
-    
-    
+   
     % % Create offsets (simulating an inhomogenous colorspace)
     % (copied from `justColSpace.m`)
     
-    [stimCols,pol] = generateStimCols('nBig',nBig);
-    interval = 360/nBig;
-    magnitude = 50;
-    offset = sin(deg2rad(0:interval:360-interval)) * magnitude;
-    
-    pol(1,:) = pol(1,:) + offset;
-    [cart(:,1),cart(:,2)] = pol2cart(deg2rad(pol(1,:)),pol(2,:));
-
-    stimCols_sRGB = LuvTosRGB([repelem(76.0693, nBig); stimCols(1,:);stimCols(2,:)]);
-    colvals = im2double(stimCols_sRGB);
-    
-    figure,
-    scatter(cart(:,1),cart(:,2),75,colvals,'filled')
-    axis equal
-    axis off
-    saveas(gcf,fullfile(['stimulus-space-non-uniformity_', datestr(now,'yymmdd'), '.svg']))
-    
-    figure,
-    plot([cart(:,1);cart(:,2)]' - [stimCols(1,:),stimCols(2,:)])
+    % [stimCols,pol] = generateStimCols('nBig',nBig);
+    % interval = 360/nBig;
+    % magnitude = 50;
+    % offset = sin(deg2rad(0:interval:360-interval)) * magnitude;
+    % 
+    % pol(1,:) = pol(1,:) + offset;
+    % [cart(:,1),cart(:,2)] = pol2cart(deg2rad(pol(1,:)),pol(2,:));
+    % 
+    % stimCols_sRGB = LuvTosRGB([repelem(76.0693, nBig); stimCols(1,:);stimCols(2,:)]);
+    % colvals = im2double(stimCols_sRGB);
+    % 
+    % figure,
+    % scatter(cart(:,1),cart(:,2),75,colvals,'filled')
+    % axis equal
+    % axis off
+    % saveas(gcf,fullfile(['stimulus-space-non-uniformity_', datestr(now,'yymmdd'), '.svg']))
+    % 
+    % figure,
+    % plot([cart(:,1);cart(:,2)]' - [stimCols(1,:),stimCols(2,:)])
 
     % - % Attractor Points
 
@@ -44,8 +43,8 @@ if strcmp(simdata_or_realdata,'sim') % simuldated data
 %     attractorWeights(16) = 20;
 %     attractorWeights(40) = 30;
 
-    attractorPoints =  [0,-38,38,0];
-    attractorWeights = [20,30];
+    % attractorPoints =  [0,-38,38,0];
+    % attractorWeights = [20,30];
 
     % - %
     
@@ -62,34 +61,26 @@ if strcmp(simdata_or_realdata,'sim') % simuldated data
 %         'nBig',nBig,...
 %         'nSmall',nSmall);
 
+    x_real = rand(nBig,1);
+
     [nll, data] = GenerativeModel([],...
-        'dprime',1.5,...
-        'lambda',-0.03,...
-        'sigma', 7,...
-        'attractorPoints',attractorPoints,...
-        'attractorWeights',attractorWeights,...
+        'dprime',2,...
+        'SimFunc_sd', 30,...
         'nTrials',nTrials,...
         'nBig',nBig,...
-        'nSmall',nSmall);
+        'nSmall',nSmall,...
+        'skewedGaussians',x_real,...
+        'pltSimFigs',true);
     
     choiceInds =    cell2mat(data.trialdata.choices)';
     cueInd =        cell2mat(data.trialdata.cues);
     response =      cell2mat(data.trialdata.chosen);
     stimCols =      data.trialdata.stimCols;
     
-    figure,
-    imagesc(data.trialdata.similarityMatrix)
-    axis equal tight
-    colormap('gray')
-    colorbar
-    xlabel('Choice')
-    ylabel('Cue')
-    caxis([0,1])
-
 elseif strcmp(simdata_or_realdata,'real') % real data
 
     %     filepath = 'Y:\PROJECTS\CausalGlobs\data\';
-    filepath = 'C:\Users\cege-user\Dropbox\Documents\MATLAB\CausalGlobs\data\'; !!!!!!!!!!!!!!!
+    filepath = 'C:\Users\cege-user\Dropbox\Documents\MATLAB\CausalGlobs\data\'; %!!!!!!!!!!!!!!!
     %filename = '210422--211012_Pollux_data';
     %filename = '210517--211108_Castor_data.mat';
     %filename = '220322--220823_Morty_data.mat';
@@ -175,9 +166,9 @@ nAttactors = 0;
 % % %
 
 % % stimulus remapping (angle) 
-lb = zeros(1,nBig) + 0.01; % lower bound
-ub = (ones(1,nBig) *  100) + rand(1,nBig); % upper bound 
-x0 = ones(1,nBig) + rand(1,nBig);
+% lb = zeros(1,nBig) + 0.01; % lower bound
+% ub = (ones(1,nBig) *  100) + rand(1,nBig); % upper bound 
+% x0 = ones(1,nBig) + rand(1,nBig);
 % %
 
 % % % stimulus remapping (angle) AND attractor dynamics
@@ -211,17 +202,23 @@ x0 = ones(1,nBig) + rand(1,nBig);
 % 
 % % % --- % %
 
-
+% % --- skewed gaussians ---
+lb = zeros(1,nBig); % lower bound
+ub = ones(1,nBig); % upper bound 
+% x0 = ones(1,nBig) * 0.5;
+x0 = rand(nBig,1);
+% %
 
 optimisationMeta = [...      % what do the x values represent in the fitting? (1st column - is it passed, 2nd column - how many values would it be if it were)
     false,   nBig*nBig;...   % free similarityMatrix
     false,   1;...           % dprime
     false,   nBig*2;...      % stimulus remapping (cartesian)
-    true,   nBig;...        % stimulus remapping (polar, angle in degrees)
+    false,   nBig;...        % stimulus remapping (polar, angle in degrees)
     false,   nAttactors*2;... % attractor points
     false,   nAttactors;...   % attractor weights
     false,   1;...           % lambda
     false,   1;...           % sigma
+    true,    nBig,...        % skewedGaussians              
     ];
 
 % options = optimoptions('lsqnonlin',...
@@ -245,12 +242,16 @@ optimisationMeta = [...      % what do the x values represent in the fitting? (1
  %     'FunctionTolerance', 1e-10
  %     ...
 
+% options = optimoptions('lsqnonlin',...
+%     'Display','iter-detailed',...
+%     'FunctionTolerance', 1e-50,...
+%      'StepTolerance', 1e-50,...
+%      'PlotFcn',@optimplotx,...
+%      'DiffMinChange',1);
+
 options = optimoptions('lsqnonlin',...
     'Display','iter-detailed',...
-    'FunctionTolerance', 1e-50,...
-     'StepTolerance', 1e-50,...
-     'PlotFcn',@optimplotx,...
-     'DiffMinChange',1);
+    'PlotFcn',@optimplotx);
 
 if optimisationMeta(1,1)
     options = optimoptions('lsqnonlin',...
@@ -279,7 +280,8 @@ f = @(x)GenerativeModel(x,... % anonymous function so that we can pass additiona
     'nTrials',nTrials,...
     'nBig',nBig, ...
     'nSmall',nSmall,...
-    'dprime',2.443912865562119,...
+    'dprime',2,...
+    'SimFunc_sd', 30,...
     'optimisationMeta',optimisationMeta); % add stimCols to speed up slightly
 
 
@@ -287,7 +289,7 @@ tic % timing test
 nll0 = f(x0);
 toc
 
-tic % second timing test, because the first is always super slow
+tic % second timing test, because the first is always slow
 nll0 = f(x0);
 toc
 
@@ -305,14 +307,21 @@ ylabel('Cue')
 
 %% Recovery - Run optimizer
 
-[x,Resnorm,FVAL,EXITFLAG,OUTPUT,LAMBDA,JACOB] = lsqnonlin(f,x0,lb,ub,options);
+x = lsqnonlin(f,x0,lb,ub,options);
+% [x,Resnorm,FVAL,EXITFLAG,OUTPUT,LAMBDA,JACOB] = lsqnonlin(f,x0,lb,ub,options);
 
-CI = nlparci(x,FVAL,'jacobian',JACOB);
- 
+% CI = nlparci(x,FVAL,'jacobian',JACOB);
+% 
 % x = bads(f,x0,lb,ub);
 
 
 %% Plotting results
+
+figure,
+scatter(x_real,x,'k*');
+axis equal square
+hold on
+plot([0,1],[0,1],'k')
 
 % % angles
 % x0_norm = x0(1:nBig)*(360/sum(x0(1:nBig)));
@@ -363,15 +372,15 @@ CI = nlparci(x,FVAL,'jacobian',JACOB);
 
 
 %% similarity matrix
-[nll_x,data2] = f(x);
-figure,
-imagesc(data2.trialdata.similarityMatrix)
-axis equal tight
-colormap('gray')
-colorbar
-caxis([0 1])
-xlabel('Choice')
-ylabel('Cue')
+% [nll_x,data2] = f(x);
+% figure,
+% imagesc(data2.trialdata.similarityMatrix)
+% axis equal tight
+% colormap('gray')
+% colorbar
+% caxis([0 1])
+% xlabel('Choice')
+% ylabel('Cue')
 
 %% Compute AIC/BIC
 

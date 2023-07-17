@@ -113,6 +113,9 @@ if ~isnan(om)
     if om(8,1)
         sigma                  = optimisationParams(sum(prod(om(1:7,:),2)) + 1 : sum(prod(om(1:8,:),2)));
     end
+    if om(9,1)
+        skewedGaussians        = optimisationParams(sum(prod(om(1:8,:),2)) + 1 : sum(prod(om(1:9,:),2)));
+    end
 end
 
 
@@ -225,11 +228,11 @@ if isnan(similarityMatrix)
         skewedGaussians = ones(nBig,1) * 0.5;
     end
 
-    SplitGauss = @(x,sd_left,sd_right) [exp(-((x(x<=0).^2)/(2*sd_left^2))), exp(-((x(x>0).^2)/(2*sd_right^2)))];
+    SplitGauss = @(x,sd_left,sd_right) [exp(-((x(x<=0).^2)/(2*sd_left^2))), exp(-((x(x>0).^2)/(2*sd_right^2)))]; % TODO Make more readable
 
     simFunc = zeros(nBig,length(x));
     for i = 1:nBig
-        simFunc(i,:) = SplitGauss(x, skewedGaussians(i)*SimFunc_sd, (1-skewedGaussians(i))*SimFunc_sd);
+        simFunc(i,:) = SplitGauss(x, skewedGaussians(i)*SimFunc_sd, (1-skewedGaussians(i))*SimFunc_sd); % TODO Make more readable
     end
 
     if pltSimFigs
