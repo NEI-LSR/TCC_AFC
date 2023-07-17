@@ -223,7 +223,9 @@ if isnan(similarityMatrix)
 
     simFunc = zeros(nBig,length(x));
     for i = 1:nBig
-        simFunc(i,:) = SplitGauss(x, skewedGaussians(i)*SimFunc_sd, (1-skewedGaussians(i))*SimFunc_sd); % TODO Make more readable
+        simFunc(i,:) = SplitGauss(x,...
+            skewedGaussians(i)     * (2 * SimFunc_sd),...
+            (1-skewedGaussians(i)) * (2 * SimFunc_sd));
     end
 
     if pltSimFigs
