@@ -215,15 +215,6 @@ if isnan(similarityMatrix)
 
     x = -180:0.1:180;
 
-    % r = [0.1, 0.9];
-    % skewedGaussians = ((sin(deg2rad(linspace(0,360,nBig)))+1)/2);
-    % skewedGaussians = skewedGaussians/(1/diff(r))+r(1);
-
-    %skewedGaussians = linspace(0.1,0.9,nBig); % linear skew
-    %skewedGaussians = ones(1,nBig)*0.5; % no skew
-
-    %figure, plot(skewedGaussians); axis tight % arbitrary, just for testing
-
     if isnan(skewedGaussians) % no skew
         skewedGaussians = ones(nBig,1) * 0.5;
     end

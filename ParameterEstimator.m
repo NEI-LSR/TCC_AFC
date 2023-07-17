@@ -61,7 +61,14 @@ if strcmp(simdata_or_realdata,'sim') % simuldated data
 %         'nBig',nBig,...
 %         'nSmall',nSmall);
 
-    x_real = rand(nBig,1);
+    r = [0.1, 0.9];
+    x_real = ((sin(deg2rad(linspace(0,360,nBig)))+1)/2);
+    x_real = x_real/(1/diff(r))+r(1);
+    
+    % skewedGaussians = linspace(0.1,0.9,nBig); % linear skew
+    % skewedGaussians = ones(1,nBig)*0.5; % no skew
+    
+    figure, plot(x_real); axis tight % arbitrary, just for testing
 
     [nll, data] = GenerativeModel([],...
         'dprime',2,...
