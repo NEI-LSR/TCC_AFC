@@ -202,7 +202,7 @@ if isnan(similarityMatrix)
         %caxis([0 1])
         xlabel('Choice')
         ylabel('Cue')
-        %saveas(gcf,['distanceMatrix_',datestr(now,'yymmdd'),'.svg'])
+        % saveas(gcf,['distanceMatrix_',datestr(now,'yymmdd'),'.svg'])
     end
 
     x = -180:0.1:180;
@@ -225,9 +225,21 @@ if isnan(similarityMatrix)
     if pltSimFigs
 
         figure,
-        plot(x,simFunc(1,:),'k')
-        title('Similarity function for cue #1')
+        plot(x,simFunc(1,:),'k', 'LineWidth',3)
+        if all(all(simFunc(1,:) == simFunc(:,:))) % if all the rows are the same
+            title('Similarity Function')
+        else
+            title('Similarity function for cue #1')
+        end
         axis tight
+        xline(0,'k:')
+        xlim([-180,180]);
+        xticks(-180:45:180);
+        ylim([0,1]);
+        yticks([0,1]);
+        xlabel('Degrees')
+        ylabel('Similarity')
+        % saveas(gcf,['SimilarityFunction_',datestr(now,'yymmdd'),'.svg'])
 
         figure, hold on, axis tight
         surf(simFunc,simFunc,'edgecolor','none')                            % TODO Make it so that the x-axis shows x
@@ -237,7 +249,7 @@ if isnan(similarityMatrix)
         view(2)
         colorbar
         set(gca, 'YDir','reverse')
-        %saveas(gcf,['SimilarityFunctionSet_',datestr(now,'yymmdd'),'.svg'])
+        % saveas(gcf,['SimilarityFunctionSet_',datestr(now,'yymmdd'),'.svg'])
 
     end
 
@@ -256,7 +268,7 @@ if isnan(similarityMatrix)
         %caxis([0 1])
         xlabel('Choice')
         ylabel('Cue')
-        %saveas(gcf,['SimilarityMatrix_',datestr(now,'yymmdd'),'.svg'])
+        % saveas(gcf,['SimilarityMatrix_',datestr(now,'yymmdd'),'.svg'])
     end
 
 end
@@ -458,7 +470,7 @@ end
 if nargout > 1 % only run this if it is requested (it's slowwww)
     cleandata.trialdata.choices             = num2cell(choiceInds',2);
     cleandata.trialdata.cues                = num2cell(cueInd');
-    cleandata.trialdata.chosen              = num2cell(response');
+    cleandata.trialdata.chosen              = num2cell(response);
     cleandata.trialdata.stimCols            = stimCols;
     cleandata.trialdata.similarityMatrix    = similarityMatrix;
     cleandata.trialdata.dprime              = dprime;
