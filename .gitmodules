@@ -1,0 +1,3 @@
+[submodule "bads"]
+	path = bads
+	url = https://github.com/acerbilab/bads.git

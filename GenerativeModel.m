@@ -32,7 +32,7 @@ default_attractorWeights      = NaN;  % NaN = no attractor weights
 default_optimisationMeta      = NaN;  % optimisation metadata (What is contained in `optimisationParams`?)
 default_forceNumerical        = false;
 default_skewedGaussians       = NaN;
-default_SimFunc_sd            = 60;
+default_gaussianWidth         = 60;
 default_pltSimFigs            = false; % plot similarity function graphs
 
 errorMsg = 'Value must be positive, scalar, and numeric.';
@@ -56,7 +56,7 @@ addParameter(ip,'attractorWeights',default_attractorWeights)
 addParameter(ip,'optimisationMeta',default_optimisationMeta)
 addParameter(ip,'forceNumerical',default_forceNumerical);
 addParameter(ip,'skewedGaussians',default_skewedGaussians)
-addParameter(ip,'SimFunc_sd',default_SimFunc_sd)
+addParameter(ip,'gaussianWidth',default_gaussianWidth)
 addParameter(ip,'pltSimFigs',default_pltSimFigs)
 
 parse(ip,varargin{:});
@@ -78,7 +78,7 @@ attractorWeights      = ip.Results.attractorWeights;
 om                    = ip.Results.optimisationMeta;
 forceNumerical        = ip.Results.forceNumerical;
 skewedGaussians       = ip.Results.skewedGaussians;         
-SimFunc_sd            = ip.Results.SimFunc_sd;
+gaussianWidth         = ip.Results.gaussianWidth;
 pltSimFigs            = ip.Results.pltSimFigs;
 
 % Overwrite if passed within optimisationMeta (used for model fitting)
@@ -103,7 +103,7 @@ if ~isnan(om)
         attractorWeights       = optimisationParams(sum(prod(om(1:5,:),2)) + 1 : sum(prod(om(1:6,:),2)));
     end
     if om(7,1)
-        SimFunc_sd             = optimisationParams(sum(prod(om(1:6,:),2)) + 1 : sum(prod(om(1:7,:),2)));
+        gaussianWidth          = optimisationParams(sum(prod(om(1:6,:),2)) + 1 : sum(prod(om(1:7,:),2)));
     end
     if om(8,1)
         skewedGaussians        = optimisationParams(sum(prod(om(1:7,:),2)) + 1 : sum(prod(om(1:8,:),2)));
@@ -218,8 +218,8 @@ if isnan(similarityMatrix)
     simFunc = zeros(nBig,length(x));
     for i = 1:nBig
         simFunc(i,:) = SplitGauss(x,...
-            skewedGaussians(i)     * (2 * SimFunc_sd),...
-            (1-skewedGaussians(i)) * (2 * SimFunc_sd));
+            skewedGaussians(i)     * (2 * gaussianWidth),...
+            (1-skewedGaussians(i)) * (2 * gaussianWidth));
     end
 
     if pltSimFigs

@@ -117,7 +117,7 @@ optimisationMeta = [...      % what do the x values represent in the fitting? (1
     true,   nBig;...        % stimulus remapping (polar, angle in degrees)
     false,   nAttactors*2;... % attractor points
     false,   nAttactors;...   % attractor weights
-    false,    1;...           % SimFunc_sd
+    false,    1;...           % gaussianWidth
     true,    nBig,...        % skewedGaussians              
     ];
 
@@ -181,7 +181,7 @@ f = @(x)GenerativeModel(x,... % anonymous function so that we can pass additiona
     'nBig',nBig, ...
     'nSmall',nSmall,...
     'dprime',1.4977,...
-    'SimFunc_sd',39.1110,...
+    'gaussianWidth',39.1110,...
     'optimisationMeta',optimisationMeta); % add stimCols to speed up slightly
 
 tic % timing test
@@ -238,7 +238,7 @@ title('Recovered matrix')
 
 
 
-% disp(SimFunc_sd);
+% disp(gaussianWidth);
 % disp(x(1));
 
 % % angles
