@@ -1,6 +1,4 @@
-function generateSimulatedData
-
-simdata_or_realdata = 'real'; % 'sim' to simulate data, 'real' to load real data
+function data = generateSimulatedData
 
 nTrials = 50000;
 nBig = 64;
@@ -65,22 +63,26 @@ rng(0);
 
 % figure, plot(skewedGaussians); axis tight % arbitrary, just for testing
 
-dprime = 1 + 2/3;
-SimFunc_sd = 100*(2/3);
+dPrime = 1 + 2/3;
+gaussianWidth = 100*(2/3);
 
-[nll, data] = GenerativeModel([],...
-    'dprime',dprime,...
-    'SimFunc_sd', SimFunc_sd,...
+disp(['dPrime = ',num2str(dPrime)])
+disp(['gaussianWidth = ',num2str(gaussianWidth)])
+
+[~, data] = GenerativeModel([],...
+    'dPrime',dPrime,...
+    'gaussianWidth', gaussianWidth,...
     'nTrials',nTrials,...
     'nBig',nBig,...
-    'nSmall',nSmall,...
-    'pltSimFigs',true);
+    'nSmall',nSmall);
 
-%
+data.trialdata.nBig     = nBig;
+data.trialdata.nSmall   = nSmall;
+data.trialdata.nTrials  = nTrials;
 
-choiceInds =    cell2mat(data.trialdata.choices)';
-cueInd =        cell2mat(data.trialdata.cues);
-response =      cell2mat(data.trialdata.chosen);
-stimCols =      data.trialdata.stimCols;
+% choiceInds =    cell2mat(data.trialdata.choices)';
+% cueInd =        cell2mat(data.trialdata.cues);
+% response =      cell2mat(data.trialdata.chosen);
+% stimCols =      data.trialdata.stimCols;
 
 end

@@ -16,7 +16,7 @@ function [nll, cleandata] = GenerativeModel(optimisationParams,varargin)
 %rng(42); % fixes random number generator for reproducibility
 
 default_similarityMatrix      = NaN;  % generate below if not passed
-default_dprime                = 1;    % Eyeballed from [ref 1], fig 3
+default_dPrime                = 1;    % Eyeballed from [ref 1], fig 3
 default_stimulusRemappingCart = NaN;
 default_stimulusRemappingPol  = NaN;
 default_nBig                  = 64;   % the large n-AFC that we are trying to emulate
@@ -40,7 +40,7 @@ validationFcn = @(x) assert(isnumeric(x) && isscalar(x) && (x > 0),errorMsg);
 
 ip = inputParser;
 addParameter(ip,'similarityMatrix',default_similarityMatrix);
-addParameter(ip,'dprime',default_dprime);
+addParameter(ip,'dPrime',default_dPrime);
 addParameter(ip,'stimulusRemappingCart',default_stimulusRemappingCart);
 addParameter(ip,'stimulusRemappingPol',default_stimulusRemappingPol);
 addParameter(ip,'nBig',default_nBig, validationFcn);
@@ -62,7 +62,7 @@ addParameter(ip,'pltSimFigs',default_pltSimFigs)
 parse(ip,varargin{:});
 
 similarityMatrix      = ip.Results.similarityMatrix;
-dprime                = ip.Results.dprime;
+dPrime                = ip.Results.dPrime;
 stimulusRemappingCart = ip.Results.stimulusRemappingCart;
 stimulusRemappingPol  = ip.Results.stimulusRemappingPol;
 nBig                  = ip.Results.nBig;
@@ -88,7 +88,7 @@ if ~isnan(om)
         similarityMatrix       = reshape(similarityVector,[nBig, nBig]);
     end
     if om(2,1)
-        dprime                 = optimisationParams(sum(prod(om(1:1,:),2)) + 1 : sum(prod(om(1:2,:),2)));
+        dPrime                 = optimisationParams(sum(prod(om(1:1,:),2)) + 1 : sum(prod(om(1:2,:),2)));
     end
     if om(3,1)
         stimulusRemappingCart  = optimisationParams(sum(prod(om(1:2,:),2)) + 1 : sum(prod(om(1:3,:),2)));
@@ -97,16 +97,10 @@ if ~isnan(om)
         stimulusRemappingPol   = optimisationParams(sum(prod(om(1:3,:),2)) + 1 : sum(prod(om(1:4,:),2)));
     end
     if om(5,1)
-        attractorPoints        = optimisationParams(sum(prod(om(1:4,:),2)) + 1 : sum(prod(om(1:5,:),2)));
+        gaussianWidth          = optimisationParams(sum(prod(om(1:4,:),2)) + 1 : sum(prod(om(1:5,:),2)));
     end
     if om(6,1)
-        attractorWeights       = optimisationParams(sum(prod(om(1:5,:),2)) + 1 : sum(prod(om(1:6,:),2)));
-    end
-    if om(7,1)
-        gaussianWidth          = optimisationParams(sum(prod(om(1:6,:),2)) + 1 : sum(prod(om(1:7,:),2)));
-    end
-    if om(8,1)
-        skewedGaussians        = optimisationParams(sum(prod(om(1:7,:),2)) + 1 : sum(prod(om(1:8,:),2)));
+        skewedGaussians        = optimisationParams(sum(prod(om(1:5,:),2)) + 1 : sum(prod(om(1:6,:),2)));
     end
 end
 
@@ -348,7 +342,7 @@ if and(nSmall<=5,~forceNumerical)
     cf(:) = similarityMatrix(idx_Lin);
     % H/T to https://stackoverflow.com/a/72857254/6464224
 
-    cf = cf*dprime;
+    cf = cf*dPrime;
 
     zmat = (- permute(shiftdim(cf,-1),[2,1,3]) + shiftdim(cf,-1))/sqrt(2);
 
@@ -400,7 +394,7 @@ if and(nSmall<=5,~forceNumerical)
     %fprintf('%f\n',nll)
 
 else
-    xvals = -2.8:0.4:8; % This covers the required range for dprimes up to about 5. E.g: figure, hold on; plot(xvals,normcdf(xvals,0,1)); plot(xvals,normcdf(xvals,5,1))
+    xvals = -2.8:0.4:8; % This covers the required range for dPrimes up to about 5. E.g: figure, hold on; plot(xvals,normcdf(xvals,0,1)); plot(xvals,normcdf(xvals,5,1))
     cf = zeros(nSmall,nTrials); % choice familiarities
 
     for i = 1:nTrials
@@ -410,7 +404,7 @@ else
     % How likely is an item of every possible psych. distance to generate
     % every possible memory strength signal:
     normals = normcdf(repmat(xvals,nSmall,1,nTrials),...
-        permute(repmat(cf,1,1,size(xvals,2)),[1,3,2]).*dprime,... 
+        permute(repmat(cf,1,1,size(xvals,2)),[1,3,2]).*dPrime,... 
         1);
     
     %normals(normals < 1e-10) = 1e-10; % to avoid a divide-by-0 issue
@@ -473,7 +467,7 @@ if nargout > 1 % only run this if it is requested (it's slowwww)
     cleandata.trialdata.chosen              = num2cell(response);
     cleandata.trialdata.stimCols            = stimCols;
     cleandata.trialdata.similarityMatrix    = similarityMatrix;
-    cleandata.trialdata.dprime              = dprime;
+    cleandata.trialdata.dPrime              = dPrime;
 end
 
 end

@@ -1,159 +1,101 @@
-clear, 
-clc, 
-close all
+function [x,aic,bic] = ParameterEstimator(data,params,rn)
 
-addpath(genpath('C:\toolbox\bads'))
-addpath(genpath('C:\Users\cege-user\Documents\MacaqueColorCategories\Analyses'))
+if ~exist('bads.m','file')
+    warning('BADS is not installed. Check that you have run `submodule init`.')
+end
 
-%%
+nBig = data.trialdata.nBig;
 
-%% Recovery - Prepare optimizer
+%% Set bounds (lb/ub) and starting values (x0)
 
-rng('shuffle')
+if isfield(params,'dPrime')
+    lb = 0;
+    ub = 10;
+    x0 = lb + (ub-lb).*rand(1,numel(lb));
+end
 
-nAttactors = 0;
+if isfield(params,'skewedGaussians')
+    lb = zeros(1,nBig);
+    ub = ones(1,nBig);
+    x0 = rand(nBig,1);
+end
 
-% % --- for stimulus remapping --- % %
-% lb = (ones(1,nBig*2) * -35) + randn(1,nBig*2); % lower bound
-% ub = (ones(1,nBig*2) *  35) + randn(1,nBig*2); % upper bound 
-% x0 = zeros(1,nBig*2) + randn(1,nBig*2);
-% % --- % %
+if isfield(params,'stimulusRemapping') % Polar 
+    lb = zeros(1,nBig) + 0.01;
+    ub = (ones(1,nBig) *  100) + rand(1,nBig);
+    x0 = ones(1,nBig) + rand(1,nBig);
+end
 
-% % --- for free similarityMatrix --- % %
-% lb = zeros(1,nBig^2); % lower bound
-% ub = ones(1,nBig^2); % upper bound                      
-% x0 = lb + (ub-lb).*rand(1,numel(lb)); % random points between lb and ub
-% % --- % %
+if isfield(params,'stimulusRemappingCart') % Cartesian
+    lb = (ones(1,nBig*2) * -35) + randn(1,nBig*2);
+    ub = (ones(1,nBig*2) *  35) + randn(1,nBig*2);
+    x0 = zeros(1,nBig*2) + randn(1,nBig*2);
+end
 
-% % % --- for attractor dynamics --- % %
-% % nAttactors = 2;
-% % lb = [-50,-50,-50,-50,0,0]; % lower bound
-% % ub = [50,50,50,50,80,80]; % upper bound                      
-% % x0 = lb + (ub-lb).*rand(1,numel(lb)); % random points between lb and ub
-% nAttactors = nBig;
-% lb = [zeros(1,nBig)]; % lower bound
-% ub = [ones(1,nBig)*30]; % upper bound                      
-% x0 = lb + (ub-lb).*rand(1,numel(lb))/2; % random points between lb and ub
-% % % --- % %
+if isfield(params,'freeSimilarityMatrix')
+    lb = zeros(1,nBig^2);
+    ub = ones(1,nBig^2);
+    x0 = lb + (ub-lb).*rand(1,numel(lb));
+end
 
-% % ----- for d prime ----- % %
-% lb = 0; % lower bound
-% ub = 10; % upper bound 
-% x0 = lb + (ub-lb).*rand(1,numel(lb)); % random points between lb and ub
-% % --- % %
+% % multi % %
 
-% % % stimulus remapping (cartesian) AND attractor dynamics
-% nAttactors = nBig;
-% lb = [(ones(1,nBig*2) * -35) + randn(1,nBig*2), zeros(1,nBig)]; % lower bound
-% ub = [(ones(1,nBig*2) *  35) + randn(1,nBig*2), ones(1,nBig)*30]; % upper bound 
-% x0 = [zeros(1,nBig*2) + randn(1,nBig*2), lb((nBig*2)+1:end) + (ub((nBig*2)+1:end)-lb((nBig*2)+1:end)).*rand(1,numel(lb((nBig*2)+1:end)))/2];
-% % %
+if isfield(params,'gaussianWidth') && isfield(params,'skewedGaussians')
+    lb = [20, zeros(1,nBig)];
+    ub = [100, ones(1,nBig)];
+    % x0 = ones(1,nBig) * 0.5;
+    x0 = [50,rand(1,nBig)];
+end
 
-% % stimulus remapping (angle) 
-% lb = zeros(1,nBig) + 0.01; % lower bound
-% ub = (ones(1,nBig) *  100) + rand(1,nBig); % upper bound 
-% x0 = ones(1,nBig) + rand(1,nBig);
-% %
+if isfield(params,'dPrime') && isfield(params,'gaussianWidth')
+    lb = [0.1, 1];
+    ub = [50, 200];
+    x0 = [2, 50];
+end
 
-% % % stimulus remapping (angle) AND attractor dynamics
-% nAttactors = nBig;
-% lb = [zeros(1,nBig) + 0.01, zeros(1,nBig)]; % lower bound
-% ub = [(ones(1,nBig) *  100) + rand(1,nBig), ones(1,nBig)*30]; % upper bound 
-% x0 = [ones(1,nBig) + rand(1,nBig), lb((nBig)+1:end) + (ub((nBig)+1:end)-lb((nBig)+1:end)).*rand(1,numel(lb((nBig)+1:end)))/2];
-% % %
+if isfield(params,'stimulusRemapping') && isfield(params,'skewedGaussians')
+    lb = zeros(1,nBig*2) + 0.001;
+    ub = ones(1,nBig*2) + rand(1,nBig*2)/100;
+    x0 = ones(1,nBig*2)*0.5 + (rand(1,nBig*2)-0.5);
+end
 
-% % % ----- for d prime AND lambda/sigma----- % %
-% lb = [0.1,-1,0.1]; % lower bound
-% ub = [7,0,10]; % upper bound 
-% x0 = lb + (ub-lb).*rand(1,numel(lb)); % random points between lb and ub
-% % % --- % %
+%% What do the x values represent in the fitting?
 
-% % % ----- for d prime AND lambda/sigma AND attractors ----- % %
-% lb = [0.1,0,0,-1,0.1]; % lower bound
-% ub = [7,50,50,0,10]; % upper bound 
-% x0 = lb + (ub-lb).*rand(1,numel(lb)); % random points between lb and ub
-% % % --- % %
+% Which parameters?
+optimisationMeta(:,1) = [...
+    isfield(params,'freeSimilarityMatrix');...
+    isfield(params,'dPrime');...
+    isfield(params,'stimulusRemappingCart');...
+    isfield(params,'stimulusRemapping');...
+    isfield(params,'gaussianWidth');...
+    isfield(params,'skewedGaussians'),...
+    ];
+optimisationMeta(:,1) = logical(optimisationMeta(:,1));
 
-% % % ----- for d prime AND lambda/sigma AND stimulus remapping ----- % %
-% lb = [0.1,zeros(1,nBig) + 0.01,-1,0.1]; % lower bound
-% ub = [7,ones(1,nBig) *  100,0,10]; % upper bound 
-% x0 = lb + (ub-lb).*rand(1,numel(lb)); % random points between lb and ub
-% 
-% x0(1) = 2.443912865562119;
-% x0(66) = -0.015041279678144;
-% x0(67) = 3.913215487407419;
-% x0(2:nBig+1) = ones(1,nBig) + rand(1,nBig);
-% 
-% % % --- % %
+disp(optimisationMeta)
 
-% % % --- skewed gaussians ---
-% lb = zeros(1,nBig); % lower bound
-% ub = ones(1,nBig); % upper bound 
-% x0 = rand(nBig,1);
-% %
-
-% % % --- SimFunc_sd and skewed gaussians ---
-% lb = [20, zeros(1,nBig)]; % lower bound
-% ub = [100, ones(1,nBig)]; % upper bound 
-% % x0 = ones(1,nBig) * 0.5;
-% x0 = [50,rand(1,nBig)];
-% % %
-
-% % % d-prime and SimFunc_sd % %
-% lb = [0.1, 1]; % lower bound
-% ub = [50, 200]; % upper bound 
-% x0 = [2, 50];
-
-% stimulus remapping AND skewed gaussians
-lb = zeros(1,nBig*2) + 0.001; % lower bound
-ub = ones(1,nBig*2) + rand(1,nBig*2)/100; % upper bound 
-x0 = ones(1,nBig*2)*0.5 + (rand(1,nBig*2)-0.5);
-%
-
-optimisationMeta = [...      % what do the x values represent in the fitting? (1st column - is it passed, 2nd column - how many values would it be if it were)
-    false,   nBig*nBig;...   % free similarityMatrix
-    false,   1;...           % dprime
-    false,   nBig*2;...      % stimulus remapping (cartesian)
-    true,   nBig;...        % stimulus remapping (polar, angle in degrees)
-    false,   nAttactors*2;... % attractor points
-    false,   nAttactors;...   % attractor weights
-    false,    1;...           % gaussianWidth
-    true,    nBig,...        % skewedGaussians              
+% How many values does each paramter have?
+optimisationMeta(:,2) = [...
+    nBig*nBig;...   % free similarityMatrix
+    1;...           % dPrime
+    nBig*2;...      % stimulus remapping (cartesian)
+    nBig;...        % stimulus remapping (polar, angle in degrees)
+    1;...           % gaussianWidth
+    nBig,...        % skewedGaussians
     ];
 
-% options = optimoptions('lsqnonlin',...
-%     'Display','iter-detailed',...
-%      'UseParallel',true,...
-%      'FunctionTolerance', 1e-15,...
-%      'StepTolerance', 1e-15,...
-%      'DiffMinChange',1,...
-%      'PlotFcn',@optimplotx_SimilarityMatrix);
-%  %    'StepTolerance',1e-1000,...
-%  %     'FunctionTolerance', 1e-10
-%  %     ...
+%% Hpyerparameters
 
-% options = optimoptions('lsqnonlin',...
-%     'Display','iter-detailed',...
-%      'FunctionTolerance', 1e-50,...
-%      'StepTolerance', 1e-50,...
-%      'DiffMinChange',1);%,...
-   %  'PlotFcn',@optimplotx_SimilarityMatrix);
- %    'StepTolerance',1e-1000,...
- %     'FunctionTolerance', 1e-10
- %     ...
+if isfield(params,'stimulusRemapping')
+    options = optimoptions('lsqnonlin',...
+        'Display','iter-detailed',...
+        'FunctionTolerance', 1e-50,...
+        'StepTolerance', 1e-50,...
+        'PlotFcn',@optimplotx,...
+        'DiffMinChange',0.1);
+end
 
-options = optimoptions('lsqnonlin',...
-    'Display','iter-detailed',...
-    'FunctionTolerance', 1e-50,...
-     'StepTolerance', 1e-50,...
-     'PlotFcn',@optimplotx,...
-     'DiffMinChange',0.1);
-
-% options = optimoptions('lsqnonlin',...
-%     'Display','iter-detailed',...
-%     'PlotFcn',@optimplotx);
-
-if optimisationMeta(1,1)
+if isfield(params,'freeSimilarityMatrix')
     options = optimoptions('lsqnonlin',...
         'Display','iter-detailed',...
         'PlotFcn',{@optimplotx_SimilarityMatrix},...
@@ -162,58 +104,57 @@ if optimisationMeta(1,1)
         'UseParallel',true);
 end
 
- 
-% f = @(x)GenerativeModel(x,... % anonymous function so that we can pass additional parameters
-%     'choiceInds',choiceInds,...
-%     'cueInd',cueInd,...
-%     'response',response,...
-%     'nTrials',nTrials,...
-%     'nBig',nBig, ...
-%     'nSmall',nSmall,...
-%     'attractorPoints',attractorPoints,...
-%     'optimisationMeta',optimisationMeta); % add stimCols to speed up slightly
-
 f = @(x)GenerativeModel(x,... % anonymous function so that we can pass additional parameters
-    'choiceInds',choiceInds,...
-    'cueInd',cueInd,...
-    'response',response,...
-    'nTrials',nTrials,...
-    'nBig',nBig, ...
-    'nSmall',nSmall,...
-    'dprime',1.4977,...
-    'gaussianWidth',39.1110,...
-    'optimisationMeta',optimisationMeta); % add stimCols to speed up slightly
+    'choiceInds',   cell2mat(data.trialdata.choices)',...
+    'cueInd',       cell2mat(data.trialdata.cues),...
+    'response',     cell2mat(data.trialdata.chosen)',...
+    'nTrials',      data.trialdata.nTrials,...
+    'nBig',         data.trialdata.nBig, ...
+    'nSmall',       data.trialdata.nSmall,...    % 'dPrime',       data.trialdata.dPrime,...    % 'gaussianWidth',data.trialdata.gaussianWidth,...
+    'optimisationMeta',optimisationMeta); % (add stimCols to speed up slightly)
 
 tic % timing test
 nll0 = f(x0);
+disp(nll0)
 toc
 
 tic % second timing test, because the first is always slow
 nll0 = f(x0);
+disp(nll0)
 toc
 
-[~,data_x0] = f(x0);
+if isfield(params,'freeSimilarityMatrix')
+    [~,data_x0] = f(x0);
 
-figure,
-imagesc(data_x0.trialdata.similarityMatrix)
-axis equal tight
-colormap('gray')
-colorbar
-caxis([0 1])
-xlabel('Choice')
-ylabel('Cue')
-title('x0 matrix')
+    if exist('plotSimilarityMatrix','file')
+        plotSimilarityMatrix(data_x0.trialdata.similarityMatrix)
+    else
+        figure,
+        imagesc(data_x0.trialdata.similarityMatrix)
+        axis equal tight
+        colormap('gray')
+        colorbar
+        caxis([0 1])
+        xlabel('Choice')
+        ylabel('Cue')
+    end
+    title('x0 Similarity Matrix')
+end
 
 
 %% Recovery - Run optimizer
 
-x = lsqnonlin(f,x0,lb,ub,options);
-% [x,Resnorm,FVAL,EXITFLAG,OUTPUT,LAMBDA,JACOB] = lsqnonlin(f,x0,lb,ub,options);
+rng(rn);
 
-% CI = nlparci(x,FVAL,'jacobian',JACOB);
-% 
-% x = bads(f,x0,lb,ub);
+if length(x0) < 3 % use bads for low dimensional models
+    x = bads(f,x0,lb,ub);
+else
+    x = lsqnonlin(f,x0,lb,ub,options);
+    % [x,Resnorm,FVAL,EXITFLAG,OUTPUT,LAMBDA,JACOB] = lsqnonlin(f,x0,lb,ub,options);
+    % CI = nlparci(x,FVAL,'jacobian',JACOB);
+end
 
+[nll_x,data_x] = f(x);
 
 %% Plotting results
 
@@ -222,19 +163,17 @@ x = lsqnonlin(f,x0,lb,ub,options);
 % axis equal square
 % plot([0,1],[0,1],'k')
 
-[nll_x,data_x] = f(x);
-
-figure,
-imagesc(data_x.trialdata.similarityMatrix)
-axis equal tight
-colormap('gray')
-colorbar
-caxis([0 1])
-xlabel('Choice')
-ylabel('Cue')
-title('Recovered matrix')
-
-
+% [nll_x,data_x] = f(x);
+% 
+% figure,
+% imagesc(data_x.trialdata.similarityMatrix)
+% axis equal tight
+% colormap('gray')
+% colorbar
+% caxis([0 1])
+% xlabel('Choice')
+% ylabel('Cue')
+% title('Recovered matrix')
 
 
 
@@ -284,12 +223,8 @@ title('Recovered matrix')
 % axis equal, legend('Location','best')
 % view(2)
 
-%%
 
-
-
-
-%% similarity matrix
+% % similarity matrix
 % [nll_x,data2] = f(x);
 % figure,
 % imagesc(data2.trialdata.similarityMatrix)
@@ -302,9 +237,9 @@ title('Recovered matrix')
 
 %% Compute AIC/BIC
 
-% numParam = length(x);
-numParam = length(x)+2;
+numParam = length(x);
 warning('Reminder: Do you need to add any other parameters?')
 
-[aic,bic] = aicbic(-nll_x,numParam,nTrials);
-% [aic,bic] = aicbic(-nll_x,numParam,nTrials,Normalize=true);
+[aic,bic] = aicbic(-nll_x,numParam,data.trialdata.nTrials);
+
+end
