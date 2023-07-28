@@ -231,6 +231,7 @@ if isnan(similarityMatrix)
         xticks(-180:45:180);
         ylim([0,1]);
         yticks([0,1]);
+        box off
         xlabel('Degrees')
         ylabel('Similarity')
         % saveas(gcf,['SimilarityFunction_',datestr(now,'yymmdd'),'.svg'])
