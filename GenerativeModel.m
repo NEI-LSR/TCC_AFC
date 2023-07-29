@@ -219,11 +219,12 @@ if isnan(similarityMatrix)
     if pltSimFigs
 
         figure,
-        plot(x,simFunc(1,:),'k', 'LineWidth',3)
         if all(all(simFunc(1,:) == simFunc(:,:))) % if all the rows are the same
+            plot(x,simFunc(1,:),'k', 'LineWidth',3)
             title('Similarity Function')
         else
-            title('Similarity function for cue #1')
+            plot(x,simFunc(32,:),'k', 'LineWidth',3)
+            title('Similarity function for cue #32')
         end
         axis tight
         xline(0,'k:')
