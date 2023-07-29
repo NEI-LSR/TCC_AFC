@@ -224,7 +224,7 @@ if isnan(similarityMatrix)
             title('Similarity Function')
         else
             plot(x,simFunc(32,:),'k', 'LineWidth',3)
-            title('Similarity function for cue #32')
+            title('Similarity function for cue 32')
         end
         axis tight
         xline(0,'k:')
