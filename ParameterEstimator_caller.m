@@ -22,6 +22,12 @@ data.trialdata.nBig = 64;
 data.trialdata.nTrials = 98104;
 data.trialdata.nSmall = 4;
 
+%% Add in stimulus remapping
+
+load('C:\Users\cege-user\Documents\MacaqueColorCategories\Analyses\TCCModels\ssnu\4_230803-161235.mat',...
+    'x')
+data.trialdata.stimulusRemappingPol = x;
+
 %%
 
 params.dPrime               = true;
@@ -44,7 +50,7 @@ data.trialdata.gaussianWidth    = 39.0070;
 params = rmfield(params,'dPrime'); % TODO It would be nice if we could just set these to false rather than have to delete them
 params = rmfield(params,'gaussianWidth');
 
-params.stimulusRemapping = true;
+% params.stimulusRemapping = true;
 params.skewedGaussians = true;
 
 [x,aic,bic,nll_x,x0] = ParameterEstimator(data,params,rn);
