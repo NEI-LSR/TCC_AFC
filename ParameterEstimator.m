@@ -1,4 +1,4 @@
-function [x,aic,bic] = ParameterEstimator(data,params,rn)
+function [x,aic,bic,nll_x,x0] = ParameterEstimator(data,params,rn)
 
 if ~exist('bads.m','file')
     warning('BADS is not installed. Check that you have run `submodule init`.')
