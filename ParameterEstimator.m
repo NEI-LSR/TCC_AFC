@@ -8,6 +8,8 @@ nBig = data.trialdata.nBig;
 
 %% Set bounds (lb/ub) and starting values (x0)
 
+rng(rn);
+
 if isfield(params,'dPrime')
     lb = 0;
     ub = 10;
@@ -143,8 +145,6 @@ end
 
 
 %% Recovery - Run optimizer
-
-rng(rn);
 
 if length(x0) < 3 % use bads for low dimensional models
     x = bads(f,x0,lb,ub);
