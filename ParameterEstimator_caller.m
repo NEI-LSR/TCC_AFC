@@ -1,4 +1,4 @@
-function ParameterEstimator_caller(rn)
+function ParameterEstimator_caller(rn,data)
 
 %clear, clc, close all
 
@@ -16,11 +16,15 @@ DataDir = 'C:\Users\cege-user\Documents\MacaqueColorCategories\Data\';
 %rn = 0;
 
 %%
-data = combineData_mat(DataDir); % TODO Switch to csv
+
+if nargin < 2
+    data = combineData_mat(DataDir); % TODO Switch to csv
+end
 
 data.trialdata.nBig = 64;
-data.trialdata.nTrials = 98104;
 data.trialdata.nSmall = 4;
+data.trialdata.nTrials = 98104;
+warning('Assuming nBig, nSmall, and nTrials')
 
 %% Add in stimulus remapping
 
@@ -61,7 +65,7 @@ disp(nll_x)
 
 % TODO [#C] automate the switch in naming so that they go into the right folders
 save(['C:\Users\cege-user\Documents\MacaqueColorCategories\Analyses\TCCModels\',...
-    'sg_ssnu\',num2str(rn),'_',datestr(now,'yymmdd-HHMMSS'),'.mat'],...
+    'ssnu_THEN_sg\',num2str(rn),'_',datestr(now,'yymmdd-HHMMSS'),'.mat'],...
     '-regexp', '^(?!(data)$).') % save everything except data (https://www.mathworks.com/matlabcentral/answers/101287-how-do-i-save-all-of-the-workspace-variables-except-for-a-certain-specified-variable-name-in-matlab#answer_110635)
 
 
