@@ -193,7 +193,7 @@ end
 
 %% Recovery - Run optimizer
 
-if 0%length(x0) < 10 % use bads for low dimensional models
+if length(x0) < 10 % use bads for low dimensional models
     x = bads(f,x0,lb,ub);
 else
     x = lsqnonlin(f,x0,lb,ub,options);
