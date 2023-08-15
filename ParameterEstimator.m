@@ -4,9 +4,14 @@ if ~exist('bads.m','file')
     warning('BADS is not installed. Check that you have run `submodule init`.')
 end
 
+% Key:
+% 1 - Free Similarity Matrix
+% 2 - dPrime
+% 3 - stimulus remapping (cartesian)
+% 4 - stimulus remapping (polar, angle in degrees)
+% 5 - gaussianWidth
+% 6 - skewedGaussians
 
-% TODO Do we want to generate these based on the data instead? 
-% And in that case do we want it to be added into `data` or just as a standalone value in this function?
 if ~isfield(data.trialdata,'nBig')
     data.trialdata.nBig = 64;
     warning('Assuming nBig == 64')
@@ -26,83 +31,86 @@ nBig = data.trialdata.nBig;
 
 rng(rn);
 
-if isfield(params,'dPrime') && params.dPrime
-    lb = 0.1;
-    ub = 50;
-    x0 = lb + (ub-lb).*rand(1,numel(lb));
+if sum(params) == 1
+
+    if params(1) % Free Similarity Matrix
+        lb = zeros(1,nBig^2);
+        ub = ones(1,nBig^2);
+        x0 = lb + (ub-lb).*rand(1,numel(lb));
+    end
+
+    if params(2) % dPrime
+        lb = 0.1;
+        ub = 50;
+        x0 = lb + (ub-lb).*rand(1,numel(lb));
+    end
+
+    if params(3) % stimulus remapping (cartesian)
+        lb = (ones(1,nBig*2) * -35) + randn(1,nBig*2);
+        ub = (ones(1,nBig*2) *  35) + randn(1,nBig*2);
+        x0 = zeros(1,nBig*2) + randn(1,nBig*2);
+    end
+
+    if params(4) % stimulus remapping (polar, angle in degrees)
+        lb = zeros(1,nBig) + 0.01;
+        ub = (ones(1,nBig) *  100) + rand(1,nBig);
+        x0 = ones(1,nBig) + rand(1,nBig);
+    end
+
+    if params(5) % gaussianWidth
+        lb = 1;
+        ub = 100;
+        x0 = lb + (ub-lb).*rand(1,numel(lb));
+    end
+
+    if params(6) % skewedGaussians
+        lb = zeros(1,nBig);
+        ub = ones(1,nBig);
+        x0 = rand(nBig,1);
+    end
+
+elseif sum(params) == 2
+
+    % % multi % %
+
+    if params(2) && params(5) % dPrime && gaussianWidth
+        lb = [0.1, 1];
+        ub = [50, 100];
+        x0 = [2, 50];
+    end
+
+    if params(5) && params(6) % gaussianWidth && skewedGaussians
+        lb = [20, zeros(1,nBig)];
+        ub = [100, ones(1,nBig)];
+        % x0 = ones(1,nBig) * 0.5;
+        x0 = [50,rand(1,nBig)];
+    end
+
+    if params(4) && params(6) % stimulus remapping (polar, angle in degrees) && skewedGaussians
+        lb = zeros(1,nBig*2) + 0.001;
+        ub = ones(1,nBig*2) + rand(1,nBig*2)/100;
+        x0 = ones(1,nBig*2)*0.5 + (rand(1,nBig*2)-0.5);
+    end
+
+elseif params(2) && params(4) && params(5) && params(6) % "ALL"
+
+    lb = [0.1,  zeros(1,nBig) + 0.001,                     1,      zeros(1,nBig) + 0.001];
+    ub = [50,   ones(1,nBig) + rand(1,nBig)/100,           100,    ones(1,nBig) + rand(1,nBig)/100];
+    x0 = [2,    ones(1,nBig)*0.5 + (rand(1,nBig)-0.5)/5,   50,     ones(1,nBig)*0.5 + (rand(1,nBig)-0.5)/5];
+
 end
 
-if isfield(params,'gaussianWidth') && params.gaussianWidth
-    lb = 1;
-    ub = 200;
-    x0 = lb + (ub-lb).*rand(1,numel(lb));
-end
-
-if isfield(params,'skewedGaussians') && params.skewedGaussians
-    lb = zeros(1,nBig);
-    ub = ones(1,nBig);
-    x0 = rand(nBig,1);
-end
-
-if isfield(params,'stimulusRemapping') && params.stimulusRemapping % Polar 
-    lb = zeros(1,nBig) + 0.01;
-    ub = (ones(1,nBig) *  100) + rand(1,nBig);
-    x0 = ones(1,nBig) + rand(1,nBig);
-end
-
-if isfield(params,'stimulusRemappingCart') && params.stimulusRemappingCart % Cartesian
-    lb = (ones(1,nBig*2) * -35) + randn(1,nBig*2);
-    ub = (ones(1,nBig*2) *  35) + randn(1,nBig*2);
-    x0 = zeros(1,nBig*2) + randn(1,nBig*2);
-end
-
-if isfield(params,'freeSimilarityMatrix') && params.freeSimilarityMatrix
-    lb = zeros(1,nBig^2);
-    ub = ones(1,nBig^2);
-    x0 = lb + (ub-lb).*rand(1,numel(lb));
-end
-
-% % multi % %
-
-if isfield(params,'gaussianWidth') && params.gaussianWidth ...
-        && isfield(params,'skewedGaussians') && params.skewedGaussians
-    lb = [20, zeros(1,nBig)];
-    ub = [100, ones(1,nBig)];
-    % x0 = ones(1,nBig) * 0.5;
-    x0 = [50,rand(1,nBig)];
-end
-
-if isfield(params,'dPrime') && params.dPrime...
-        && isfield(params,'gaussianWidth') && params.gaussianWidth
-    lb = [0.1, 1];
-    ub = [50, 200];
-    x0 = [2, 50];
-end
-
-if isfield(params,'stimulusRemapping') && params.stimulusRemapping...
-        && isfield(params,'skewedGaussians') && params.skewedGaussians
-    lb = zeros(1,nBig*2) + 0.001;
-    ub = ones(1,nBig*2) + rand(1,nBig*2)/100;
-    x0 = ones(1,nBig*2)*0.5 + (rand(1,nBig*2)-0.5);
-end
 
 %% What do the x values represent in the fitting?
 
 optimisationMeta = double(zeros([6,2]));
 
 % Which parameters?
-optimisationMeta(:,1) = [...
-    isfield(params,'freeSimilarityMatrix')      && params.freeSimilarityMatrix;...
-    isfield(params,'dPrime')                    && params.dPrime;...
-    isfield(params,'stimulusRemappingCart')     && params.stimulusRemappingCart;...
-    isfield(params,'stimulusRemapping')         && params.stimulusRemapping;...
-    isfield(params,'gaussianWidth')             && params.gaussianWidth;...
-    isfield(params,'skewedGaussians')           && params.skewedGaussians,...
-    ];
+optimisationMeta(:,1) = params;
 
 % How many values does each paramter have?
 optimisationMeta(:,2) = [...
-    nBig*nBig;...   % free similarityMatrix
+    nBig*nBig;...   % Free Similarity Matrix
     1;...           % dPrime
     nBig*2;...      % stimulus remapping (cartesian)
     nBig;...        % stimulus remapping (polar, angle in degrees)
@@ -110,45 +118,36 @@ optimisationMeta(:,2) = [...
     nBig,...        % skewedGaussians
     ];
 
-%% Hpyerparameters
+%% Hyperparameters
 
-if isfield(params,'stimulusRemapping') && params.stimulusRemapping
-    options = optimoptions('lsqnonlin',...
-        'Display','iter-detailed',...
-        'FunctionTolerance', 1e-50,...
-        'StepTolerance', 1e-50,...
-        'PlotFcn',@optimplotx,...
-        'DiffMinChange',0.1);
-end
-
-if isfield(params,'skewedGaussians') && params.skewedGaussians
-    options = optimoptions('lsqnonlin',...
+% general options
+options = optimoptions('lsqnonlin',...
         'Display','iter-detailed',...
         'FunctionTolerance', 1e-50,...
         'StepTolerance', 1e-50,...
         'PlotFcn',@optimplotx);
-end
 
-if isfield(params,'stimulusRemapping') && params.skewedGaussians...
-        && isfield(params,'skewedGaussians') && params.skewedGaussians
+% specific options
+if params(1)
     options = optimoptions('lsqnonlin',...
-        'Display','iter-detailed',...
-        'FunctionTolerance', 1e-50,...
-        'StepTolerance', 1e-50,...
-        'PlotFcn',@optimplotx,...
-        'DiffMinChange',0.1);
-end
-
-if isfield(params,'freeSimilarityMatrix') && params.freeSimilarityMatrix
-    options = optimoptions('lsqnonlin',...
-        'Display','iter-detailed',...
         'PlotFcn',{@optimplotx_SimilarityMatrix},...
         'FunctionTolerance', 10e-10,...
         'MaxFunctionEvaluations',1e6,...
         'UseParallel',true);
 end
 
-if size(data.trialdata.chosen,1) > size(data.trialdata.chosen,1)
+if params(4)
+    options = optimoptions('lsqnonlin',...
+        'Display','iter-detailed',...
+        'FunctionTolerance', 1e-50,...
+        'StepTolerance', 1e-50,...
+        'PlotFcn',@optimplotx,...
+        'DiffMinChange',0.1); % TODO Write note about why this is neccessary
+end
+
+%% Define and test function
+
+if size(data.trialdata.chosen,1) < size(data.trialdata.chosen,2) % TODO This is a temp hack fix for a difference between real and simulated data
     data.trialdata.chosen = data.trialdata.chosen';
     warning('transposing choices');
 end
@@ -158,139 +157,75 @@ cueInd = cell2mat(data.trialdata.cues);
 response = cell2mat(data.trialdata.chosen);
 
 f = @(x)GenerativeModel(x,... % anonymous function so that we can pass additional parameters
-    'choiceInds',       choiceInds',... 
+    'choiceInds',       choiceInds',...
     'cueInd',           cueInd,...
     'response',         response,...
     'nTrials',          data.trialdata.nTrials,...
     'nBig',             data.trialdata.nBig, ...
     'nSmall',           data.trialdata.nSmall,...
     'optimisationMeta', optimisationMeta,...
-    varargin{:}); % (add stimCols to speed up slightly)
+    varargin{:});
 
-tic % timing test
+tic % timing test 1
 nll0 = f(x0);
-disp(nll0)
 toc
 
-tic % second timing test, because the first is always slow
+tic % timing test 2 (because the first is always slower)
 nll0 = f(x0);
-disp(nll0)
 toc
 
-if isfield(params,'freeSimilarityMatrix')
-    [~,data_x0] = f(x0);
+[~,data_x0] = f(x0);
 
-    if exist('plotSimilarityMatrix','file')
-        plotSimilarityMatrix(data_x0.trialdata.similarityMatrix)
-    else
-        figure,
-        imagesc(data_x0.trialdata.similarityMatrix)
-        axis equal tight
-        colormap('gray')
-        colorbar
-        caxis([0 1])
-        xlabel('Choice')
-        ylabel('Cue')
-    end
+if exist('plotSimilarityMatrix','file') % Part of the MCC repo
+    plotSimilarityMatrix(data_x0.trialdata.similarityMatrix)
+    title('x0 Similarity Matrix')
+else
+    figure,
+    imagesc(data_x0.trialdata.similarityMatrix') % transposed so cue on x-axis
+    axis equal tight
+    colormap('gray')
+    colorbar
+    caxis([0 1])
+    xlabel('Choice')
+    ylabel('Cue')
     title('x0 Similarity Matrix')
 end
 
-
 %% Recovery - Run optimizer
 
-if length(x0) < 3 % use bads for low dimensional models
+if 0%length(x0) < 10 % use bads for low dimensional models
     x = bads(f,x0,lb,ub);
 else
     x = lsqnonlin(f,x0,lb,ub,options);
+
+    % TODO Work out how to compute confidence intervals
     % [x,Resnorm,FVAL,EXITFLAG,OUTPUT,LAMBDA,JACOB] = lsqnonlin(f,x0,lb,ub,options);
     % CI = nlparci(x,FVAL,'jacobian',JACOB);
 end
 
 [nll_x,data_x] = f(x);
 
-%% Plotting results
-
-% figure, hold on
-% scatter(skewedGaussians,x,'k*');
-% axis equal square
-% plot([0,1],[0,1],'k')
-
-% [nll_x,data_x] = f(x);
-% 
-% figure,
-% imagesc(data_x.trialdata.similarityMatrix)
-% axis equal tight
-% colormap('gray')
-% colorbar
-% caxis([0 1])
-% xlabel('Choice')
-% ylabel('Cue')
-% title('Recovered matrix')
-
-
-
-% disp(gaussianWidth);
-% disp(x(1));
-
-% % angles
-% x0_norm = x0(1:nBig)*(360/sum(x0(1:nBig)));
-% x_norm  =  x(1:nBig)*(360 /sum(x(1:nBig)));
-% 
-% figure, hold on, axis tight
-% plot(pol(1,:),'DisplayName','Ground truth')
-% plot(cumsum([0,x0_norm(1:end-1)]),'DisplayName','x0')
-% plot(cumsum([0,x_norm(1:end-1)]),'DisplayName','x')
-% legend('Location','best')
-% xticks([min(xlim),max(xlim)])
-% yticks([min(ylim),max(ylim)])
-
-
-% % attractors
-% figure, hold on, 
-% legend('Location','best')
-% axis tight
-% plot(1:nBig, x(1:nBig),'DisplayName','x')
-% % plot...
-% 
-% figure, hold on, 
-% legend('Location','best')
-% axis tight
-% plot((1:nAttactors)+nBig, attractorWeights,'DisplayName','attractorWeights')
-% plot((1:nAttactors)+nBig, x((1:nAttactors)+nBig),'DisplayName','x')
-% plot((1:nAttactors)+nBig, x0((1:nAttactors)+nBig),':','DisplayName','x0')
-
-
-% stimuli scatter
-% [stimCols,pol] = generateStimCols('nBig',nBig);
-% [stimCols_x0(:,1),stimCols_x0(:,2)] = pol2cart(deg2rad(cumsum([0,x0_norm(1:end-1)])), pol(2,:));
-% [stimCols_x(:,1),stimCols_x(:,2)]   = pol2cart(deg2rad(cumsum([0, x_norm(1:end-1)])), pol(2,:));
-% 
-% figure,
-% plot3(stimCols_x0(:,1),stimCols_x0(:,2),1:nBig,'ko-','DisplayName','x_0')
-% axis equal, legend('Location','best')
-% view(2)
-% 
-% figure,
-% plot3(stimCols_x(:,1),stimCols_x(:,2),1:nBig,'ko-','DisplayName','x_{lsq}')
-% axis equal, legend('Location','best')
-% view(2)
-
-
-% % similarity matrix
-% [nll_x,data2] = f(x);
-% figure,
-% imagesc(data2.trialdata.similarityMatrix)
-% axis equal tight
-% colormap('gray')
-% colorbar
-% caxis([0 1])
-% xlabel('Choice')
-% ylabel('Cue')
+if exist('plotSimilarityMatrix','file') % Part of the MCC repo
+    plotSimilarityMatrix(data_x.trialdata.similarityMatrix)
+    title('x Similarity Matrix')
+else
+    figure,
+    imagesc(data_x.trialdata.similarityMatrix') % transposed so cue on x-axis
+    axis equal tight
+    colormap('gray')
+    colorbar
+    caxis([0 1])
+    xlabel('Choice')
+    ylabel('Cue')
+    title('x Similarity Matrix')
+end
 
 %% Compute AIC/BIC
 
-% numParam = input(['What number of parameters should be used to compute AIC/BIC?',newline]);
 % 
+
+% numParam = input(['What number of parameters should be used to compute AIC/BIC?',newline]);
+%
 % [aic,bic] = aicbic(-nll_x,numParam,data.trialdata.nTrials);
 aic = NaN;
 bic = NaN;

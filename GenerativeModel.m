@@ -77,7 +77,7 @@ attractorPoints       = ip.Results.attractorPoints;
 attractorWeights      = ip.Results.attractorWeights;
 om                    = ip.Results.optimisationMeta;
 forceNumerical        = ip.Results.forceNumerical;
-skewedGaussians       = ip.Results.skewedGaussians;         
+skewedGaussians       = ip.Results.skewedGaussians;
 gaussianWidth         = ip.Results.gaussianWidth;
 pltSimFigs            = ip.Results.pltSimFigs;
 
@@ -131,19 +131,16 @@ end
 if ~isnan(stimulusRemappingCart)
     stimulusRemappingCart = reshape(stimulusRemappingCart, [nBig,2])';
     stimCols_pr = stimCols + stimulusRemappingCart; %stimcols post-remap
-    %disp(stimCols_pr(1,1:10))
+    [stimCols_pol_pr(1,:),stimCols_pol_pr(2,:)] = cart2pol(stimCols_pr(1,:),stimCols_pr(2,:));
+    stimCols_pol_pr(1,:) = rad2deg(stimCols_pol_pr(1,:));
 elseif ~isnan(stimulusRemappingPol)
-    % "distance between points" version
-        % if using optimisers that don't allow for setting lower bounds we
-        % can manually enforce it here (hacky)
-        stimulusRemappingPol(stimulusRemappingPol<0) = 0;
-        % normalise input
-        stimulusRemappingPol = stimulusRemappingPol*(360/sum(stimulusRemappingPol));
-        % convert stimCols to polar
-        [~,stimCols_pol_pr(2,:)] = cart2pol(stimCols(1,:),stimCols(2,:));
-        stimCols_pol_pr(1,:) = cumsum([0,stimulusRemappingPol(1:end-1)]);
-        % convert back to cartesian
-        [stimCols_pr(1,:),stimCols_pr(2,:)] = pol2cart(deg2rad(stimCols_pol_pr(1,:)),stimCols_pol_pr(2,:));
+    % normalise input to add to 360
+    stimulusRemappingPol = stimulusRemappingPol*(360/sum(stimulusRemappingPol));
+    % convert stimCols to polar
+    [~,stimCols_pol_pr(2,:)] = cart2pol(stimCols(1,:),stimCols(2,:));
+    stimCols_pol_pr(1,:) = cumsum([0,stimulusRemappingPol(1:end-1)]);
+    % convert back to cartesian
+    [stimCols_pr(1,:),stimCols_pr(2,:)] = pol2cart(deg2rad(stimCols_pol_pr(1,:)),stimCols_pol_pr(2,:));
 else
     stimCols_pr = stimCols;
     stimCols_pol_pr = stimCols_pol;
@@ -207,7 +204,7 @@ if isnan(similarityMatrix)
 
     SplitGauss = @(x,sd_left,sd_right) [...
         exp(-((x(x<=0).^2)/(2*sd_left^2))),...
-        exp(-((x(x> 0).^2)/(2*sd_right^2)))]; 
+        exp(-((x(x> 0).^2)/(2*sd_right^2)))];
 
     simFunc = zeros(nBig,length(x));
     for i = 1:nBig
@@ -280,14 +277,14 @@ if any(~isnan(attractorPoints(:))) && any(~isnan(attractorWeights(:)))
     end
     nAttactors = length(attractorPoints_u);
 
-       % Create attractor similarity matrix
+    % Create attractor similarity matrix
 
     sm_a = zeros(nBig,nBig,nAttactors); % similiarity matrix - attractors
     for i = 1:nAttactors
 
-        % if stim A is within attractor, 
-        % stim A's similarity to *all the other stimuli* 
-        % that are also within radius i, 
+        % if stim A is within attractor,
+        % stim A's similarity to *all the other stimuli*
+        % that are also within radius i,
         % and that are closer to the stim A than the attractor point is
         % get max value (1)
 
@@ -311,22 +308,22 @@ if any(~isnan(attractorPoints(:))) && any(~isnan(attractorWeights(:)))
             end
         end
 
-%         figure,
-%         imagesc(sm_a(:,:,i))
-%         colorbar
-%         axis equal tight
-%         colormap('gray')
+        %         figure,
+        %         imagesc(sm_a(:,:,i))
+        %         colorbar
+        %         axis equal tight
+        %         colormap('gray')
     end
 
     % Combine with standard similarity matrix
 
-       similarityMatrix = max(cat(3,similarityMatrix,sm_a),[],3);
+    similarityMatrix = max(cat(3,similarityMatrix,sm_a),[],3);
 
-%         figure,
-%         imagesc(similarityMatrix)
-%         colorbar
-%         axis equal tight
-%         colormap('gray')
+    %         figure,
+    %         imagesc(similarityMatrix)
+    %         colorbar
+    %         axis equal tight
+    %         colormap('gray')
 
 end
 
@@ -406,9 +403,9 @@ else
     % How likely is an item of every possible psych. distance to generate
     % every possible memory strength signal:
     normals = normcdf(repmat(xvals,nSmall,1,nTrials),...
-        permute(repmat(cf,1,1,size(xvals,2)),[1,3,2]).*dPrime,... 
+        permute(repmat(cf,1,1,size(xvals,2)),[1,3,2]).*dPrime,...
         1);
-    
+
     %normals(normals < 1e-10) = 1e-10; % to avoid a divide-by-0 issue
 
     % figure, hold on

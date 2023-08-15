@@ -5,25 +5,30 @@ nBig = 64;
 nSmall = 4;
 
 % % Create offsets (simulating an inhomogenous colorspace)
-% (copied from `justColSpace.m`)
 
-% [stimCols,pol] = generateStimCols('nBig',nBig);
-% interval = 360/nBig;
-% magnitude = 50;
-% offset = sin(deg2rad(0:interval:360-interval)) * magnitude;
-%
-% pol(1,:) = pol(1,:) + offset;
-% [cart(:,1),cart(:,2)] = pol2cart(deg2rad(pol(1,:)),pol(2,:));
-%
-% stimCols_sRGB = LuvTosRGB([repelem(76.0693, nBig); stimCols(1,:);stimCols(2,:)]);
-% colvals = im2double(stimCols_sRGB);
-%
-% figure,
-% scatter(cart(:,1),cart(:,2),75,colvals,'filled')
-% axis equal
-% axis off
+[stimCols,pol] = generateStimCols('nBig',nBig);
+interval = 360/nBig;
+magnitude = 20;
+offset = cos(deg2rad(0:interval:360-interval)) * magnitude;
+
+pol(1,:) = pol(1,:) + offset;
+[cart(:,1),cart(:,2)] = pol2cart(deg2rad(pol(1,:)),pol(2,:));
+
+stimCols_sRGB = LuvTosRGB([repelem(76.0693, nBig); stimCols(1,:);stimCols(2,:)]);
+colvals = im2double(stimCols_sRGB);
+
+figure,
+scatter(cart(:,1),cart(:,2),75,colvals,'filled')
+axis equal
+axis off
 % saveas(gcf,fullfile(['stimulus-space-non-uniformity_', datestr(now,'yymmdd'), '.svg']))
-%
+
+figure, 
+plot(diff(pol(1,:)),'k')
+axis tight
+xlabel('Cue')
+ylabel('Interval (degrees)')
+
 % figure,
 % plot([cart(:,1);cart(:,2)]' - [stimCols(1,:),stimCols(2,:)])
 
@@ -55,16 +60,16 @@ rng(0);
 %         'nSmall',nSmall);
 
 % r = [0.1, 0.9];
-% skewedGaussians = ((sin(deg2rad(linspace(0,360,nBig)))+1)/2);
+skewedGaussians = (sin(deg2rad(linspace(0,360,nBig)))/10)+0.5;
 % skewedGaussians = skewedGaussians/(1/diff(r))+r(1);
 %
 % skewedGaussians = linspace(0.1,0.9,nBig); % linear skew
 % skewedGaussians = ones(1,nBig)*0.5; % no skew
 
-% figure, plot(skewedGaussians); axis tight % arbitrary, just for testing
+figure, plot(skewedGaussians); axis tight % arbitrary, just for testing
 
-dPrime = 1 + 2/3;
-gaussianWidth = 100*(2/3);
+dPrime = 1;
+gaussianWidth = 40;
 
 disp(['dPrime = ',num2str(dPrime)])
 disp(['gaussianWidth = ',num2str(gaussianWidth)])
@@ -74,7 +79,9 @@ disp(['gaussianWidth = ',num2str(gaussianWidth)])
     'gaussianWidth', gaussianWidth,...
     'nTrials',nTrials,...
     'nBig',nBig,...
-    'nSmall',nSmall);
+    'nSmall',nSmall,...
+    'stimulusRemappingCart',[cart(:,1);cart(:,2)]' - [stimCols(1,:),stimCols(2,:)],... % TODO Switch to using 'stimulusRemappingPol', since that's what we're primarily using in the recovery/fitting. The effect is analagous here, but it would be easier to read
+    'skewedGaussians',skewedGaussians);
 
 data.trialdata.nBig     = nBig;
 data.trialdata.nSmall   = nSmall;
@@ -84,5 +91,20 @@ data.trialdata.nTrials  = nTrials;
 % cueInd =        cell2mat(data.trialdata.cues);
 % response =      cell2mat(data.trialdata.chosen);
 % stimCols =      data.trialdata.stimCols;
+
+if exist('plotSimilarityMatrix','file') % Part of the MCC repo
+    plotSimilarityMatrix(data.trialdata.similarityMatrix)
+    title('x Similarity Matrix')
+else
+    figure,
+    imagesc(data.trialdata.similarityMatrix') % transposed so cue on x-axis
+    axis equal tight
+    colormap('gray')
+    colorbar
+    caxis([0 1])
+    xlabel('Choice')
+    ylabel('Cue')
+    title('x Similarity Matrix')
+end
 
 end
