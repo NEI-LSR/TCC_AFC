@@ -1,8 +1,11 @@
+function [nll,aic] = RecoveryTesting(realOrSimData,rn)
+
 % Comparing model outputs
 
-clear, clc, close all
-
-realOrSimData = 'sim';
+if ~exist('realOrSimData','var')
+    realOrSimData = 'sim';
+    warning('No value for `realOrSimData` provided. Defaulting to simulated data')
+end
 
 if strcmp(realOrSimData,'sim')
 
@@ -25,21 +28,36 @@ end
 
 %% 
 
-rn = 1;
+if ~exist('rn','var')
+    rn = 0;
+    warning('Using default rn (0)')
+end
 
 %%
 
-ParameterEstimator_caller(rn,data,'single-ssnu');
+[~,~,~,nll.dPrimeAndGaussianWidth,~] = ParameterEstimator_caller(rn,data,'dPrimeAndGaussianWidth');
+aic.dPrimeAndGaussianWidth = aicbic(-nll.dPrimeAndGaussianWidth,2);
 
 %%
 
-ParameterEstimator_caller(rn,data,'single-sg');
+[~,~,~,nll.single_ssnu,~] = ParameterEstimator_caller(rn,data,'single-ssnu');
+aic.single_ssnu = aicbic(-nll.single_ssnu,64);
 
 %%
 
-ParameterEstimator_caller(rn,data,'simultaneous');
+[~,~,~,nll.single_sg,~] = ParameterEstimator_caller(rn,data,'single-sg');
+aic.single_sg = aicbic(-nll.single_sg,64);
 
 %%
 
-ParameterEstimator_caller(rn,data,'iterative');
+[~,~,~,nll.simultaneous,~] = ParameterEstimator_caller(rn,data,'simultaneous');
+aic.simultaneous = aicbic(-nll.simultaneous,130);
 
+%%
+
+% [~,~,~,nll.iterative,~] = ParameterEstimator_caller(rn,data,'iterative');
+% aic.iterative = aicbic(-nll.iterative,130);
+
+%%
+
+end

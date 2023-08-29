@@ -203,6 +203,13 @@ else
     % CI = nlparci(x,FVAL,'jacobian',JACOB);
 end
 
+% sOpt = optimset('fmin_adam');
+% sOpt.GradObj = 'off';
+% sOpt.MaxFunEvals = 1e4;
+% sOpt.Display = 'iter-detailed';
+%
+% x = fmin_adam(f,x0,[], [], [], [], [], sOpt);
+
 [nll_x,data_x] = f(x);
 
 if exist('plotSimilarityMatrix','file') % Part of the MCC repo
