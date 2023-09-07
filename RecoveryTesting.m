@@ -1,4 +1,4 @@
-function [nll,aic] = RecoveryTesting(realOrSimData,rn)
+function [nll,aic,bic] = RecoveryTesting(realOrSimData,rn)
 
 % Comparing model outputs
 
@@ -15,14 +15,23 @@ elseif strcmp(realOrSimData,'real')
 
     addpath(genpath('C:\Users\cege-user\Documents\MacaqueColorCategories'))
     DataDir = 'C:\Users\cege-user\Documents\MacaqueColorCategories\Data\';
-    if ~exist('data','var')
-        data = combineData_mat(DataDir); % TODO Switch to csv
-    end
+    % if ~exist('data','var')
+    %     data = combineData_mat(DataDir); % TODO Switch to csv
+    % end
 
-    data.trialdata.nBig = 64;
-    data.trialdata.nSmall = 4;
-    data.trialdata.nTrials = 98104;
-    warning('Assuming nBig, nSmall, and nTrials')
+    data = load([DataDir,'210517--211108_Castor_data.mat']);
+    % data = load([DataDir,'210422--211012_Pollux_data.mat']);
+    % data = load([DataDir,'210428--210609_Buster_data.mat']);
+    % data = load([DataDir,'220322--220823_Morty_data.mat']);
+    
+    % data.trialdata.nBig = 64;
+    % data.trialdata.nSmall = 4;
+    % data.trialdata.nTrials = 98104;
+    % warning('Assuming nBig, nSmall, and nTrials')
+
+    data.trialdata.nBig = size(data.trialdata.stimCols{1},1);
+    data.trialdata.nSmall = size(data.trialdata.choices{1},2);
+    data.trialdata.nTrials = size(data.trialdata.cues,1);
 
 end
 
@@ -35,29 +44,28 @@ end
 
 %%
 
-[~,~,~,nll.dPrimeAndGaussianWidth,~] = ParameterEstimator_caller(rn,data,'dPrimeAndGaussianWidth');
-aic.dPrimeAndGaussianWidth = aicbic(-nll.dPrimeAndGaussianWidth,2);
+% [~,~,~,nll.dPrimeAndGaussianWidth,~] = ParameterEstimator_caller(rn,data,'dPrimeAndGaussianWidth');
+% [aic.dPrimeAndGaussianWidth,bic.dPrimeAndGaussianWidth] = aicbic(-nll.dPrimeAndGaussianWidth,2,data.trialdata.nTrials);
 
 %%
 
-[~,~,~,nll.single_ssnu,~] = ParameterEstimator_caller(rn,data,'single-ssnu');
-aic.single_ssnu = aicbic(-nll.single_ssnu,64);
+% [~,~,~,nll.single_ssnu,~] = ParameterEstimator_caller(rn,data,'single-ssnu');
+% [aic.single_ssnu,bic.single_ssnu] = aicbic(-nll.single_ssnu,64,data.trialdata.nTrials);
 
 %%
 
-[~,~,~,nll.single_sg,~] = ParameterEstimator_caller(rn,data,'single-sg');
-aic.single_sg = aicbic(-nll.single_sg,64);
+% [~,~,~,nll.single_sg,~] = ParameterEstimator_caller(rn,data,'single-sg');
+% [aic.single_sg,bic.single_sg] = aicbic(-nll.single_sg,64,data.trialdata.nTrials);
 
 %%
 
-[~,~,~,nll.simultaneous,~] = ParameterEstimator_caller(rn,data,'simultaneous');
-aic.simultaneous = aicbic(-nll.simultaneous,130);
+% [~,~,~,nll.simultaneous,~] = ParameterEstimator_caller(rn,data,'simultaneous');
+% [aic.simultaneous,bic.simultaneous] = aicbic(-nll.simultaneous,130,data.trialdata.nTrials);
 
 %%
 
-% [~,~,~,nll.iterative,~] = ParameterEstimator_caller(rn,data,'iterative');
-% aic.iterative = aicbic(-nll.iterative,130);
+[~,~,~,nll.iterative,~] = ParameterEstimator_caller(rn,data,'iterative');
+[aic.iterative,bic.iterative] = aicbic(-nll.iterative,130,data.trialdata.nTrials);
 
-%%
 
 end
