@@ -22,7 +22,7 @@ if ~isfield(data.trialdata,'nSmall')
 end
 if ~isfield(data.trialdata,'nTrials')
     data.trialdata.nTrials = 98104;
-    warning('Assuming nSmall == 98104')
+    warning('Assuming nTrials == 98104')
 end
 
 nBig = data.trialdata.nBig;
