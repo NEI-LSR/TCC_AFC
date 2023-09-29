@@ -104,6 +104,19 @@ if ~isnan(om)
     end
 end
 
+if exist('stimulusRemappingPol','var')
+    if length(stimulusRemappingPol) ~= nBig
+        currentInterval = 360/length(stimulusRemappingPol);
+        % figure, hold on, plot(0:currentInterval:360,stimulusRemappingPol([1:end,1]),'*-');
+        goalInterval = 360/nBig;
+        stimulusRemappingPol = interp1(...
+            0:currentInterval:360,...
+            stimulusRemappingPol([1:end,1]),... % for loop around
+            0:goalInterval:360);
+        stimulusRemappingPol = stimulusRemappingPol(1:end-1);
+        % plot(0:goalInterval:360-goalInterval,stimulusRemappingPol,'*-')
+    end
+end
 
 %% Generate cues
 

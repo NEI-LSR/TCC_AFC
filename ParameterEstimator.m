@@ -1,4 +1,4 @@
-function [x,aic,bic,nll_x,x0] = ParameterEstimator(data,params,rn,varargin)
+function [x,aic,bic,nll_x,x0] = ParameterEstimator(data,params,rn,dim,varargin)
 
 if ~exist('bads.m','file')
     warning('BADS is not installed. Check that you have run `submodule init`.')
@@ -41,7 +41,7 @@ if sum(params) == 1
 
     if params(2) % dPrime
         lb = 0.1;
-        ub = 50;
+        ub = 100;
         x0 = lb + (ub-lb).*rand(1,numel(lb));
     end
 
@@ -55,6 +55,14 @@ if sum(params) == 1
         lb = zeros(1,nBig) + 0.01;
         ub = (ones(1,nBig) *  100) + rand(1,nBig);
         x0 = ones(1,nBig) + rand(1,nBig);
+    end
+
+    if exist('dim','var') % TODO (hacky, temporary)
+        if params(4) % stimulus remapping (polar, angle in degrees)
+            lb = zeros(1,dim) + 0.01;
+            ub = (ones(1,dim) *  100) + rand(1,dim);
+            x0 = ones(1,dim) + rand(1,dim);
+        end
     end
 
     if params(5) % gaussianWidth
@@ -75,7 +83,7 @@ elseif sum(params) == 2
 
     if params(2) && params(5) % dPrime && gaussianWidth
         lb = [0.1, 1];
-        ub = [50, 100];
+        ub = [100, 100];
         x0 = [2, 50];
     end
 
@@ -95,7 +103,7 @@ elseif sum(params) == 2
 elseif params(2) && params(4) && params(5) && params(6) % "ALL"
 
     lb = [0.1,  zeros(1,nBig) + 0.001,                     1,      zeros(1,nBig) + 0.001];
-    ub = [50,   ones(1,nBig) + rand(1,nBig)/100,           100,    ones(1,nBig) + rand(1,nBig)/100];
+    ub = [100,   ones(1,nBig) + rand(1,nBig)/100,          100,    ones(1,nBig) + rand(1,nBig)/100];
     x0 = [2,    ones(1,nBig)*0.5 + (rand(1,nBig)-0.5)/5,   50,     ones(1,nBig)*0.5 + (rand(1,nBig)-0.5)/5];
 
 end
@@ -117,6 +125,17 @@ optimisationMeta(:,2) = [...
     1;...           % gaussianWidth
     nBig,...        % skewedGaussians
     ];
+
+if exist('dim','var') % TODO (hacky, temporary)
+    optimisationMeta(:,2) = [...
+    nBig*nBig;...   % Free Similarity Matrix
+    1;...           % dPrime
+    nBig*2;...      % stimulus remapping (cartesian)
+    dim;...        % stimulus remapping (polar, angle in degrees)
+    1;...           % gaussianWidth
+    nBig,...        % skewedGaussians
+    ];
+end
 
 %% Hyperparameters
 
