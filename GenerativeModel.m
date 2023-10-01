@@ -104,7 +104,7 @@ if ~isnan(om)
     end
 end
 
-if exist('stimulusRemappingPol','var')
+if exist('stimulusRemappingPol','var') && all(~isnan(stimulusRemappingPol))
     if length(stimulusRemappingPol) ~= nBig
         currentInterval = 360/length(stimulusRemappingPol);
         % figure, hold on, plot(0:currentInterval:360,stimulusRemappingPol([1:end,1]),'*-');
@@ -114,6 +114,20 @@ if exist('stimulusRemappingPol','var')
             stimulusRemappingPol([1:end,1]),... % for loop around
             0:goalInterval:360);
         stimulusRemappingPol = stimulusRemappingPol(1:end-1);
+        % plot(0:goalInterval:360-goalInterval,stimulusRemappingPol,'*-')
+    end
+end
+
+if exist('skewedGaussians','var') && all(~isnan(skewedGaussians))
+    if length(skewedGaussians) ~= nBig
+        currentInterval = 360/length(skewedGaussians);
+        % figure, hold on, plot(0:currentInterval:360,stimulusRemappingPol([1:end,1]),'*-');
+        goalInterval = 360/nBig;
+        skewedGaussians = interp1(...
+            0:currentInterval:360,...
+            skewedGaussians([1:end,1]),... % for loop around
+            0:goalInterval:360);
+        skewedGaussians = skewedGaussians(1:end-1);
         % plot(0:goalInterval:360-goalInterval,stimulusRemappingPol,'*-')
     end
 end

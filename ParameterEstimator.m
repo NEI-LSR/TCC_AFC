@@ -1,4 +1,4 @@
-function [x,aic,bic,nll_x,x0] = ParameterEstimator(data,params,rn,dim,varargin)
+function [x,aic,bic,nll_x,x0] = ParameterEstimator(data,params,rn,dim1,dim2,varargin)
 
 if ~exist('bads.m','file')
     warning('BADS is not installed. Check that you have run `submodule init`.')
@@ -57,11 +57,11 @@ if sum(params) == 1
         x0 = ones(1,nBig) + rand(1,nBig);
     end
 
-    if exist('dim','var') % TODO (hacky, temporary)
+    if exist('dim1','var') % TODO (hacky, temporary)
         if params(4) % stimulus remapping (polar, angle in degrees)
-            lb = zeros(1,dim) + 0.01;
-            ub = (ones(1,dim) *  100) + rand(1,dim);
-            x0 = ones(1,dim) + rand(1,dim);
+            lb = zeros(1,dim1) + 0.01;
+            ub = (ones(1,dim1) *  100) + rand(1,dim1);
+            x0 = ones(1,dim1) + rand(1,dim1);
         end
     end
 
@@ -74,7 +74,15 @@ if sum(params) == 1
     if params(6) % skewedGaussians
         lb = zeros(1,nBig);
         ub = ones(1,nBig);
-        x0 = rand(nBig,1);
+        x0 = rand(1,nBig);
+    end
+
+    if exist('dim2','var') % TODO (hacky, temporary)
+        if params(6) % skewedGaussians
+            lb = zeros(1,dim2);
+            ub = ones(1,dim2);
+            x0 = rand(1,dim2);
+        end
     end
 
 elseif sum(params) == 2
@@ -126,14 +134,25 @@ optimisationMeta(:,2) = [...
     nBig,...        % skewedGaussians
     ];
 
-if exist('dim','var') % TODO (hacky, temporary)
+if exist('dim1','var') && ~isempty(dim1) % TODO (hacky, temporary)
     optimisationMeta(:,2) = [...
     nBig*nBig;...   % Free Similarity Matrix
     1;...           % dPrime
     nBig*2;...      % stimulus remapping (cartesian)
-    dim;...        % stimulus remapping (polar, angle in degrees)
+    dim1;...        % stimulus remapping (polar, angle in degrees)
     1;...           % gaussianWidth
     nBig,...        % skewedGaussians
+    ];
+end
+
+if exist('dim2','var') && ~isempty(dim2) % TODO (hacky, temporary)
+    optimisationMeta(:,2) = [...
+    nBig*nBig;...   % Free Similarity Matrix
+    1;...           % dPrime
+    nBig*2;...      % stimulus remapping (cartesian)
+    nBig;...        % stimulus remapping (polar, angle in degrees)
+    1;...           % gaussianWidth
+    dim2,...        % skewedGaussians
     ];
 end
 
@@ -232,7 +251,7 @@ end
 
 %% Recovery - Run optimizer
 
-if length(x0) < 10 % use bads for low dimensional models
+if length(x0) < 10 && ~exist('dim2','var') % use bads for low dimensional models, TODO hacky way to get it to use lsqnonlin for lowdim sg models
     x = bads(f,x0,lb,ub);
 else
     x = lsqnonlin(f,x0,lb,ub,options);
