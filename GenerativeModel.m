@@ -34,6 +34,7 @@ default_forceNumerical        = false;
 default_skewedGaussians       = NaN;
 default_gaussianWidth         = 60;
 default_pltSimFigs            = false; % plot similarity function graphs
+default_offsetGaussians      = false;
 
 errorMsg = 'Value must be positive, scalar, and numeric.';
 validationFcn = @(x) assert(isnumeric(x) && isscalar(x) && (x > 0),errorMsg);
@@ -58,6 +59,7 @@ addParameter(ip,'forceNumerical',default_forceNumerical);
 addParameter(ip,'skewedGaussians',default_skewedGaussians)
 addParameter(ip,'gaussianWidth',default_gaussianWidth)
 addParameter(ip,'pltSimFigs',default_pltSimFigs)
+addParameter(ip,'offsetGaussians',default_offsetGaussians)
 
 parse(ip,varargin{:});
 
@@ -80,6 +82,7 @@ forceNumerical        = ip.Results.forceNumerical;
 skewedGaussians       = ip.Results.skewedGaussians;
 gaussianWidth         = ip.Results.gaussianWidth;
 pltSimFigs            = ip.Results.pltSimFigs;
+offsetGaussians      = ip.Results.offsetGaussians;
 
 % Overwrite if passed within optimisationMeta (used for model fitting)
 if ~isnan(om)
@@ -101,6 +104,9 @@ if ~isnan(om)
     end
     if om(6,1)
         skewedGaussians        = optimisationParams(sum(prod(om(1:5,:),2)) + 1 : sum(prod(om(1:6,:),2)));
+    end
+    if om(7,1)
+        offsetGaussians       = optimisationParams(sum(prod(om(1:6,:),2)) + 1 : sum(prod(om(1:7,:),2)));
     end
 end
 
@@ -131,6 +137,8 @@ if exist('skewedGaussians','var') && all(~isnan(skewedGaussians))
         % plot(0:goalInterval:360-goalInterval,stimulusRemappingPol,'*-')
     end
 end
+
+% TODO I may well want one of these for offsetGaussians as well at some point...
 
 %% Generate cues
 
@@ -234,10 +242,21 @@ if isnan(similarityMatrix)
         exp(-((x(x> 0).^2)/(2*sd_right^2)))];
 
     simFunc = zeros(nBig,length(x));
+
+    if isscalar(gaussianWidth)
+        gaussianWidth = ones(nBig,1)*gaussianWidth;
+    end
+    
     for i = 1:nBig
         simFunc(i,:) = SplitGauss(x,...
-            skewedGaussians(i)     * (2 * gaussianWidth),...
-            (1-skewedGaussians(i)) * (2 * gaussianWidth));
+            skewedGaussians(i)     * (2 * gaussianWidth(i)),...
+            (1-skewedGaussians(i)) * (2 * gaussianWidth(i)));
+    end
+
+    if any(offsetGaussians)
+        for i = 1:nBig
+            simFunc(i,:) = circshift(simFunc(i,:),round(offsetGaussians(i)*abs(1/(x(1)-x(2)))),2); % TODO: Current limitation, actually only shifts to the nearest 0.1 degrees
+        end
     end
 
     if pltSimFigs
