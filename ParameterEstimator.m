@@ -57,7 +57,7 @@ if sum(params) == 1
         x0 = ones(1,nBig) + rand(1,nBig);
     end
 
-    if exist('dim1','var') % TODO (hacky, temporary)
+    if exist('dim1','var') && ~isempty(dim1) % TODO (hacky, temporary)
         if params(4) % stimulus remapping (polar, angle in degrees)
             lb = zeros(1,dim1) + 0.01;
             ub = (ones(1,dim1) *  100) + rand(1,dim1);
@@ -77,12 +77,18 @@ if sum(params) == 1
         x0 = rand(1,nBig);
     end
 
-    if exist('dim2','var') % TODO (hacky, temporary)
+    if exist('dim2','var') && ~isempty(dim2) % TODO (hacky, temporary)
         if params(6) % skewedGaussians
             lb = zeros(1,dim2);
             ub = ones(1,dim2);
             x0 = rand(1,dim2);
         end
+    end
+
+    if params(7) % offsetGaussians
+        lb = ones(1,nBig)*-180;
+        ub = ones(1,nBig)*180;
+        x0 = (rand(1,nBig)*30)-15; % somewhat arbitrary
     end
 
 elseif sum(params) == 2
@@ -95,11 +101,18 @@ elseif sum(params) == 2
         x0 = [2, 50];
     end
 
+    % if params(5) && params(6) % gaussianWidth && skewedGaussians
+    %     lb = [20, zeros(1,nBig)];
+    %     ub = [100, ones(1,nBig)];
+    %     % x0 = ones(1,nBig) * 0.5;
+    %     x0 = [50,rand(1,nBig)];
+    % end
+
     if params(5) && params(6) % gaussianWidth && skewedGaussians
-        lb = [20, zeros(1,nBig)];
-        ub = [100, ones(1,nBig)];
+        lb = [ones(1,nBig), zeros(1,nBig)];
+        ub = [ones(1,nBig)*100, ones(1,nBig)];
         % x0 = ones(1,nBig) * 0.5;
-        x0 = [50,rand(1,nBig)];
+        x0 = [(ones(1,nBig)*37) + rand(1,nBig)*6, rand(1,nBig)];
     end
 
     if params(4) && params(6) % stimulus remapping (polar, angle in degrees) && skewedGaussians
@@ -119,10 +132,30 @@ end
 
 %% What do the x values represent in the fitting?
 
-optimisationMeta = double(zeros([6,2]));
+optimisationMeta = double(zeros([7,2]));
 
 % Which parameters?
 optimisationMeta(:,1) = params;
+
+% How many values does each paramter have?
+% optimisationMeta(:,2) = [...
+%     nBig*nBig;...   % Free Similarity Matrix
+%     1;...           % dPrime
+%     nBig*2;...      % stimulus remapping (cartesian)
+%     nBig;...        % stimulus remapping (polar, angle in degrees)
+%     1;...           % gaussianWidth
+%     nBig,...        % skewedGaussians
+%     ];
+
+% % How many values does each paramter have?
+% optimisationMeta(:,2) = [...
+%     nBig*nBig;...   % Free Similarity Matrix
+%     1;...           % dPrime
+%     nBig*2;...      % stimulus remapping (cartesian)
+%     nBig;...        % stimulus remapping (polar, angle in degrees)
+%     nBig;...        % gaussianWidth
+%     nBig;...        % skewedGaussians
+%     nBig];
 
 % How many values does each paramter have?
 optimisationMeta(:,2) = [...
@@ -131,8 +164,8 @@ optimisationMeta(:,2) = [...
     nBig*2;...      % stimulus remapping (cartesian)
     nBig;...        % stimulus remapping (polar, angle in degrees)
     1;...           % gaussianWidth
-    nBig,...        % skewedGaussians
-    ];
+    nBig;...        % skewedGaussians
+    nBig];
 
 if exist('dim1','var') && ~isempty(dim1) % TODO (hacky, temporary)
     optimisationMeta(:,2) = [...
@@ -163,6 +196,7 @@ options = optimoptions('lsqnonlin',...
         'Display','iter-detailed',...
         'FunctionTolerance', 1e-50,...
         'StepTolerance', 1e-50,...
+        'MaxIterations', 1500,...
         'PlotFcn',@optimplotx);
 
 % specific options
@@ -174,7 +208,7 @@ if params(1)
         'UseParallel',true);
 end
 
-if params(4)
+if params(4) || params(7)
     options = optimoptions('lsqnonlin',...
         'Display','iter-detailed',...
         'FunctionTolerance', 1e-50,...

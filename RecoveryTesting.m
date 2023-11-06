@@ -44,7 +44,7 @@ end
 
 %%
 
-% [~,~,~,nll.dPrimeAndGaussianWidth,~] = ParameterEstimator_caller(rn,data,'dPrimeAndGaussianWidth');
+% [x,~,~,nll.dPrimeAndGaussianWidth,~] = ParameterEstimator_caller(rn,data,'dPrimeAndGaussianWidth');
 % [aic.dPrimeAndGaussianWidth,bic.dPrimeAndGaussianWidth] = aicbic(-nll.dPrimeAndGaussianWidth,2,data.trialdata.nTrials);
 
 %%
@@ -64,8 +64,14 @@ end
 
 %%
 
-[~,~,~,nll.iterative,~] = ParameterEstimator_caller(rn,data,'iterative');
-[aic.iterative,bic.iterative] = aicbic(-nll.iterative,130,data.trialdata.nTrials);
+% [~,~,~,nll.iterative,~] = ParameterEstimator_caller(rn,data,'iterative');
+% [aic.iterative,bic.iterative] = aicbic(-nll.iterative,130,data.trialdata.nTrials);
+
+%%
+
+[x,~,~,nll.dPrimeAndGaussianWidth,~] = ParameterEstimator_caller(rn,data,'GaussianWidthsAndSkewedGaussians');
+[aic.dPrimeAndGaussianWidth,bic.dPrimeAndGaussianWidth] = aicbic(-nll.dPrimeAndGaussianWidth,128,data.trialdata.nTrials);
+
 
 
 end
