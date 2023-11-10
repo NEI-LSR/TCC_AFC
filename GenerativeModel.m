@@ -308,6 +308,20 @@ if isnan(similarityMatrix)
         xlabel('Choice')
         ylabel('Cue')
         % saveas(gcf,['SimilarityMatrix_',datestr(now,'yymmdd'),'.svg'])
+
+        figure, hold on
+        plot(1:nBig,similarityMatrix(32,:),'Color',[120,202,188]/255, 'LineWidth',2,'LineStyle','--')
+        xline(32,'k:','LineWidth',2)
+        % title('Similarity function for cue 32')
+        axis tight
+        xlim([1,nBig]);
+        xticks(32);
+        ylim([0,1]);
+        yticks([0,1]);
+        box off
+        xlabel('Stimulus Index')
+        ylabel('Similarity')
+        % saveas(gcf,['SimilarityFunction_',datestr(now,'yymmdd'),'.svg'])
     end
 
 end
