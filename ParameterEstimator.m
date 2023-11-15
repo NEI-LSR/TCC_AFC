@@ -227,22 +227,30 @@ end
 % data cleaning (remove trials with NaN choices) 
 % (I have no idea how such trials occured)
 
-if any(any(isnan(cell2mat(data.trialdata.choices))))
+if any(any(isnan(cell2mat(data.trialdata.choices)))) % TODO Move this into the initial data import stage (e.g. combineData_mat.m)
     warning('Detected trials with NaN choices. Removing.')
     [a,~] = ind2sub([data.trialdata.nTrials,data.trialdata.nSmall],...
         find(isnan(cell2mat(data.trialdata.choices))));
-    data.trialdata.allchoices(unique(a)) = [];
-    data.trialdata.dirname(unique(a)) = [];
+    try
+        data.trialdata.allchoices(unique(a)) = [];
+    catch
+    end
+    try
+        data.trialdata.dirname(unique(a)) = [];
+    catch
+    end
     data.trialdata.paradigm(unique(a)) = [];
     data.trialdata.choices(unique(a)) = [];
     data.trialdata.chosen_idx(unique(a)) = [];
     data.trialdata.cues(unique(a)) = [];
-    data.trialdata.stimCols_raw(unique(a)) = [];
+    try
+        data.trialdata.stimCols_raw(unique(a)) = [];
+    catch
+    end
     data.trialdata.chosen(unique(a)) = [];
     data.trialdata.stimCols(unique(a)) = [];
     data.trialdata.nTrials = size(data.trialdata.cues,1);
 end
-
 
 choiceInds = cell2mat(data.trialdata.choices);
 cueInd = cell2mat(data.trialdata.cues);
