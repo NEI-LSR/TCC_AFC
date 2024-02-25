@@ -97,7 +97,7 @@ elseif sum(params) == 2
 
     if params(2) && params(5) % dPrime && gaussianWidth
         lb = [0.1, 1];
-        ub = [100, 100];
+        ub = [54, 100];
         x0 = [2, 50];
     end
 
