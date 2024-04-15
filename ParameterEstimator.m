@@ -228,7 +228,7 @@ end
 % data cleaning (remove trials with NaN choices) 
 % (I have no idea how such trials occured)
 
-if any(any(isnan(cell2mat(data.trialdata.choices)))) % TODO Move this into the initial data import stage (e.g. combineData_mat.m)
+if any(any(isnan(cell2mat(data.trialdata.choices)))) % TODO Move this into the initial data import stage (e.g. combineData.m)
     warning('Detected trials with NaN choices. Removing.')
     [a,~] = ind2sub([data.trialdata.nTrials,data.trialdata.nSmall],...
         find(isnan(cell2mat(data.trialdata.choices))));
