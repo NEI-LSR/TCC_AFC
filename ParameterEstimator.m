@@ -97,7 +97,7 @@ elseif sum(params) == 2
 
     if params(2) && params(5) % dPrime && gaussianWidth
         lb = [0.1, 1];
-        ub = [100, 100];
+        ub = [54, 100];
         x0 = [2, 50];
     end
 
@@ -174,8 +174,8 @@ if exist('dim1','var') && ~isempty(dim1) % TODO (hacky, temporary)
     nBig*2;...      % stimulus remapping (cartesian)
     dim1;...        % stimulus remapping (polar, angle in degrees)
     1;...           % gaussianWidth
-    nBig,...        % skewedGaussians
-    ];
+    nBig;...        % skewedGaussians
+    nBig];
 end
 
 if exist('dim2','var') && ~isempty(dim2) % TODO (hacky, temporary)
@@ -185,8 +185,8 @@ if exist('dim2','var') && ~isempty(dim2) % TODO (hacky, temporary)
     nBig*2;...      % stimulus remapping (cartesian)
     nBig;...        % stimulus remapping (polar, angle in degrees)
     1;...           % gaussianWidth
-    dim2,...        % skewedGaussians
-    ];
+    dim2;...        % skewedGaussians
+    nBig];
 end
 
 %% Hyperparameters
