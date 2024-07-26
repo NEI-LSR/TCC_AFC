@@ -11,6 +11,7 @@ end
 % 4 - stimulus remapping (polar, angle in degrees)
 % 5 - gaussianWidth
 % 6 - skewedGaussians
+% 7 - offsetGaussians
 
 if ~isfield(data.trialdata,'nBig')
     data.trialdata.nBig = 64;
@@ -97,7 +98,7 @@ elseif sum(params) == 2
 
     if params(2) && params(5) % dPrime && gaussianWidth
         lb = [0.1, 1];
-        ub = [54, 100];
+        ub = [10, 100];
         x0 = [2, 50];
     end
 
@@ -185,8 +186,19 @@ if exist('dim2','var') && ~isempty(dim2) % TODO (hacky, temporary)
     nBig*2;...      % stimulus remapping (cartesian)
     nBig;...        % stimulus remapping (polar, angle in degrees)
     1;...           % gaussianWidth
-    dim2;...        % skewedGaussians
-    nBig];
+    nBig;...        % skewedGaussians
+    dim2];
+end
+
+if exist('dim1','var') && ~isempty(dim1) && exist('dim2','var') && ~isempty(dim2) % TODO (hacky, temporary)
+    optimisationMeta(:,2) = [...
+    nBig*nBig;...   % Free Similarity Matrix
+    1;...           % dPrime
+    nBig*2;...      % stimulus remapping (cartesian)
+    dim1;...        % stimulus remapping (polar, angle in degrees)
+    1;...           % gaussianWidth
+    nBig;...        % skewedGaussians
+    dim2];
 end
 
 %% Hyperparameters
@@ -215,7 +227,8 @@ if params(4) || params(7)
         'FunctionTolerance', 1e-50,...
         'StepTolerance', 1e-50,...
         'PlotFcn',@optimplotx,...
-        'DiffMinChange',0.1); % TODO Write note about why this is neccessary
+        'DiffMinChange',0.1,... % TODO Write note about why this is neccessary
+        'UseParallel',true); 
 end
 
 %% Define and test function

@@ -138,8 +138,19 @@ if exist('skewedGaussians','var') && all(~isnan(skewedGaussians))
     end
 end
 
-% TODO I may well want one of these for offsetGaussians as well at some point...
-
+if exist('offsetGaussians','var') && all(~isnan(offsetGaussians))
+    if length(offsetGaussians) ~= nBig
+        currentInterval = 360/length(offsetGaussians);
+        % figure, hold on, plot(0:currentInterval:360,stimulusRemappingPol([1:end,1]),'*-');
+        goalInterval = 360/nBig;
+        offsetGaussians = interp1(...
+            0:currentInterval:360,...
+            offsetGaussians([1:end,1]),... % for loop around
+            0:goalInterval:360);
+        offsetGaussians = offsetGaussians(1:end-1);
+        % plot(0:goalInterval:360-goalInterval,stimulusRemappingPol,'*-')
+    end
+end
 %% Generate cues
 
 if any(isnan(stimCols)) %is stimCols == NaN
