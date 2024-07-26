@@ -34,7 +34,7 @@ default_forceNumerical        = false;
 default_skewedGaussians       = NaN;
 default_gaussianWidth         = 60;
 default_pltSimFigs            = false; % plot similarity function graphs
-default_offsetGaussians       = false;
+default_offsetGaussians       = NaN;
 
 errorMsg = 'Value must be positive, scalar, and numeric.';
 validationFcn = @(x) assert(isnumeric(x) && isscalar(x) && (x > 0),errorMsg);
