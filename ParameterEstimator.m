@@ -77,6 +77,12 @@ if sum(params) == 1
         ub = ones(1,nBig);
         x0 = rand(1,nBig);
     end
+    
+    if params(7) % offsetGaussians
+        lb = ones(1,nBig)*-180;
+        ub = ones(1,nBig)*180;
+        x0 = (rand(1,nBig)*30)-15; % somewhat arbitrary
+    end
 
     if exist('dim2','var') && ~isempty(dim2) % TODO (hacky, temporary)
         if params(6) % skewedGaussians
@@ -84,12 +90,12 @@ if sum(params) == 1
             ub = ones(1,dim2);
             x0 = rand(1,dim2);
         end
-    end
-
-    if params(7) % offsetGaussians
-        lb = ones(1,nBig)*-180;
-        ub = ones(1,nBig)*180;
-        x0 = (rand(1,nBig)*30)-15; % somewhat arbitrary
+        
+        if params(7) % skewedGaussians
+            lb = ones(1,dim2)*-180;
+            ub = ones(1,dim2)*180;
+            x0 = (rand(1,dim2)*30)-15; % somewhat arbitrary
+        end
     end
 
 elseif sum(params) == 2
@@ -120,6 +126,12 @@ elseif sum(params) == 2
         lb = zeros(1,nBig*2) + 0.001;
         ub = ones(1,nBig*2) + rand(1,nBig*2)/100;
         x0 = ones(1,nBig*2)*0.5 + (rand(1,nBig*2)-0.5);
+    end
+    
+    if params(4) && params(7) % stimulus remapping (polar, angle in degrees) && offsetGaussians (assumes stimulus space reduction)
+        lb = [zeros(1,dim1) + 0.01, ones(1,dim2)*-180];
+        ub = [(ones(1,dim1) *  100) + rand(1,dim1), ones(1,dim2)*180];
+        x0 = [ones(1,dim1) + rand(1,dim1),(rand(1,dim2)*30)-15];
     end
 
 elseif params(2) && params(4) && params(5) && params(6) % "ALL"
